@@ -1,4 +1,4 @@
-### An Exploratory Analysis Bail of Pretrial Data in New York State
+### An Exploratory Analysis of Pretrial Data in New York State
 
 "Bail" is the fee a defendant can pay to be released from custody pending trial. The purpose of bail is to ensure that the defendant appears in court for their trial. If the defendant fails to appear in court, the bail is forfeited. Otherwise, the defendant recoups the expense.
 
