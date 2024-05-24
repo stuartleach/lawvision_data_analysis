@@ -9,7 +9,7 @@ In New York City, this often means a stint at Rikers Island, a notorious jail co
 
 [CPL 510.10](https://www.nysenate.gov/legislation/laws/CPL/510.10) outlines what judges _**can**_ and _**cannot**_ consider when setting bail.
 
-### The purpose of this project is to understand how closely judges in New York State adhere to the law, as outlined in CPL 510.10, when setting bail.
+### _The purpose of this project is to understand how closely judges in New York State adhere to the law, as outlined in CPL 510.10, when setting bail._
 ### Dataset:
 1. [New York Pretrial Release Data](https://ww2.nycourts.gov/pretrial-release-data-33136)
 2. Census Average Median Income for New York State counties (TODO: link for reference)
