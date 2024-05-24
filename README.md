@@ -1,5 +1,4 @@
-# LawVision: 
-## Exploratory Analysis Bail Reform in New York State
+## An Exploratory Analysis Bail of Pretrial Data in New York State
 
 "Bail" is a term used to describe the release of a defendant from custody pending trial. The purpose of bail is to ensure that the defendant appears in court for their trial. If the defendant fails to appear in court, the bail is forfeited.
 
