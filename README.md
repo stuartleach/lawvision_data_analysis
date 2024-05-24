@@ -1,6 +1,6 @@
-## An Exploratory Analysis Bail of Pretrial Data in New York State
+### An Exploratory Analysis Bail of Pretrial Data in New York State
 
-"Bail" is a term used to describe the release of a defendant from custody pending trial. The purpose of bail is to ensure that the defendant appears in court for their trial. If the defendant fails to appear in court, the bail is forfeited.
+"Bail" is the fee a defendant can pay to be released from custody pending trial. The purpose of bail is to ensure that the defendant appears in court for their trial. If the defendant fails to appear in court, the bail is forfeited. Otherwise, the defendant recoups the expense.
 
 The bail system is controversial because it can lead to the pretrial detention of individuals who cannot afford to pay bail.
 
@@ -18,7 +18,7 @@ In New York City, this often means a stint at Rikers Island, a notorious jail co
 2. Create a similar profile for each county; i.e., find what's more important to a Kings County judge than a Richmond County judge when compared to the average New York State judge.
 3. Assign profiles to every judge in the state, comparing them to judges in their county and state. 
 
-## Questions we will explore:
+### Questions we will explore:
 1. How closely to judges follow the law when setting bail? Are there factors that have an outsized influence on the amount of bail set?
 2. What factors have a high importance value that _shouldn't_, e.g. race, gender, median income of the county?
 3. What factors have a higher importance value to some judges than others? One judge, for example, might deem a defendant's age as more significant than prior criminal convictions.
