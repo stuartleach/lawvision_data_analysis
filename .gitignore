@@ -1,0 +1,12 @@
+/mlruns/**
+/.venv/**
+/outputs/**
+/outputs
+/__pycache__/*
+/__pycache__/
+/mlruns
+.env
+/outputs/
+/mlruns/
+/old/
+/old/**
