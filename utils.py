@@ -2,6 +2,7 @@ import logging
 import os
 import re
 
+import pandas as pd
 import requests
 import seaborn as sns
 from matplotlib import pyplot as plt
@@ -21,6 +22,30 @@ def read_previous_r2(file_path):
 def write_current_r2(file_path, r2_value):
     with open(file_path, 'w') as file:
         file.write(str(r2_value))
+
+
+def save_importance_profile(importance_df, profile_name, outputs_dir):
+    profile_path = os.path.join(outputs_dir, f"{profile_name}_importance_profile.csv")
+    importance_df.to_csv(profile_path, index=False)
+    logging.info(f"Importance profile saved as '{profile_path}'")
+    return profile_path
+
+
+def load_importance_profile(profile_name, outputs_dir):
+    profile_path = os.path.join(outputs_dir, f"{profile_name}_importance_profile.csv")
+    if os.path.exists(profile_path):
+        importance_df = pd.read_csv(profile_path)
+        logging.info(f"Importance profile loaded from '{profile_path}'")
+        return importance_df
+    else:
+        raise FileNotFoundError(f"Importance profile '{profile_path}' not found")
+
+
+def compare_to_baseline(importance_df, baseline_df):
+    comparison = importance_df.merge(baseline_df, on='Feature', suffixes=('_judge', '_baseline'))
+    comparison['Difference'] = comparison['Importance_judge'] - comparison['Importance_baseline']
+    logging.info(f"Comparison to baseline profile completed")
+    return comparison
 
 
 def plot_feature_importance(importance_df, r2, total_cases, r2_comparison, outputs_dir, elapsed_time, model_types,
@@ -48,7 +73,8 @@ def plot_feature_importance(importance_df, r2, total_cases, r2_comparison, outpu
     # plt.text(0.95, 0.2, f'Model Used for Featured Selection = {model_for_selection }', verticalalignment='bottom',
     #          horizontalalignment='right',
     #          transform=plt.gca().transAxes, color='black', fontsize=15, weight='bold')
-    plt.text(0.95, 0.25, f'Number of Features = {num_features}', verticalalignment='bottom', horizontalalignment='right',
+    plt.text(0.95, 0.25, f'Number of Features = {num_features}', verticalalignment='bottom',
+             horizontalalignment='right',
              transform=plt.gca().transAxes, color='orange', fontsize=15, weight='bold')
 
     r2_comparison_color = 'green' if 'increased' in r2_comparison else 'red'

@@ -6,9 +6,9 @@ import mlflow
 import mlflow.sklearn
 import pandas as pd
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
 
-from config import GOOD_HYPERPARAMETERS, query, model_types, tune_hyperparameters_flag, sql_values, model_for_selection, perform_feature_selection
+from config import GOOD_HYPERPARAMETERS, model_types, tune_hyperparameters_flag, sql_values, model_for_selection, \
+    perform_feature_selection, get_query, case_limit
 from data_loader import load_data, create_engine_connection
 from modeling import (
     train_model,
@@ -18,7 +18,15 @@ from modeling import (
     feature_selection
 )
 from preprocessing import preprocess_data, split_data
-from utils import plot_feature_importance, write_current_r2, read_previous_r2, send_discord_notification
+from utils import (
+    plot_feature_importance,
+    write_current_r2,
+    read_previous_r2,
+    send_discord_notification,
+    save_importance_profile,
+    load_importance_profile,
+    compare_to_baseline
+)
 
 load_dotenv()
 
@@ -30,8 +38,6 @@ avatar_url = DISCORD_AVATAR_URL
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
-
-# Configuration parameters
 
 def main():
     start_time = time.time()
@@ -51,7 +57,11 @@ def main():
     # Create the connection string
     engine = create_engine_connection(user, password, host, port, dbname)
 
+    # Generate the query with or without the judge and county name filters
+    query = get_query(sql_values)
+
     data = load_data(engine, query, sql_values)
+
     X, y, y_bin = preprocess_data(data, outputs_dir)
     X_train, y_train, X_test, y_test = split_data(X, y_bin, outputs_dir)
 
@@ -65,6 +75,9 @@ def main():
 
     model_r2_scores = []
     num_features = X_train.shape[1]
+
+    baseline_profile_name = "baseline"
+    baseline_profile_path = os.path.join(outputs_dir, f"{baseline_profile_name}_importance_profile.csv")
 
     mlflow.set_experiment("LawVision Model Training")
 
@@ -92,7 +105,10 @@ def main():
 
                 mse, r2 = evaluate_model(model, X_test_selected, y_test)
                 model_r2_scores.append(r2)
-                log_metrics(model, mse, r2, pd.DataFrame(X_train_selected, columns=X.columns if not perform_feature_selection else X.columns[selector.support_]), outputs_dir)  # Use selected features
+                log_metrics(model, mse, r2, pd.DataFrame(X_train_selected,
+                                                         columns=X.columns if not perform_feature_selection else
+                                                         X.columns[selector.support_]),
+                            outputs_dir)  # Use selected features
 
                 mlflow.log_metric("mse", mse)
                 mlflow.log_metric("r2", r2)
@@ -123,6 +139,18 @@ def main():
                                                      elapsed_time, model_types, num_features, model_for_selection)
 
             mlflow.log_artifact(plot_file_path)
+
+            # Save the importance profile
+            profile_path = save_importance_profile(importance_df, baseline_profile_name, outputs_dir)
+            mlflow.log_artifact(profile_path)
+
+            # Compare to the baseline profile if it exists
+            if os.path.exists(baseline_profile_path):
+                baseline_df = load_importance_profile(baseline_profile_name, outputs_dir)
+                comparison_df = compare_to_baseline(importance_df, baseline_df)
+                comparison_path = os.path.join(outputs_dir, 'comparison_to_baseline.csv')
+                comparison_df.to_csv(comparison_path, index=False)
+                mlflow.log_artifact(comparison_path)
 
     # Send Discord notification
     message = (f"\n\n\n\n\n\n\nModel training completed.\n"
