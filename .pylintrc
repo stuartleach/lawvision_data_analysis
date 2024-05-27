@@ -1,0 +1,10 @@
+[MASTER]
+ignore=.git,__pycache__,.venv
+init-hook="from pylint.config import find_pylintrc; import os, sys; sys.path.append(os.path.dirname(find_pylintrc()))"
+
+[MESSAGES CONTROL]
+disable=C0114,C0115,C0116
+
+[REPORTS]
+output-format=colorized
+disable=import-error

@@ -1,4 +1,3 @@
-# Initialize the models package
 from .model_manager import ModelManager
 from .model_trainer import ModelTrainer
 

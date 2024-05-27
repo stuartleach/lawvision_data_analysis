@@ -1,5 +1,13 @@
-from .app import App
-from models.model_trainer import ModelTrainer
-from .params import GOOD_HYPERPARAMETERS, DISCORD_WEBHOOK_URL, DISCORD_AVATAR_URL
+"""
+This module is the entry point of the application.
+"""
 
-__all__ = ["App", "ModelTrainer", "GOOD_HYPERPARAMETERS", "DISCORD_WEBHOOK_URL", "DISCORD_AVATAR_URL"]
+from .app import run
+from .params import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL, GOOD_HYPERPARAMETERS
+
+__all__ = [
+    "run",
+    "GOOD_HYPERPARAMETERS",
+    "DISCORD_WEBHOOK_URL",
+    "DISCORD_AVATAR_URL",
+]
