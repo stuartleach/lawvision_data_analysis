@@ -49,8 +49,7 @@ class ModelTrainer:
             plot_file_path = plot_feature_importance(importance_df, average_r2, self.total_cases,
                                                      r2_comparison,
                                                      self.outputs_dir, elapsed_time, model_types,
-                                                     self.num_features,
-                                                     model_for_selection)
+                                                     self.num_features)
             mlflow.log_artifact(plot_file_path)
 
             profile_path = save_importance_profile(importance_df, self.baseline_profile_name,
