@@ -9,11 +9,8 @@ import pandas as pd
 from dotenv import load_dotenv
 
 from app.config import (
-    MODEL_FOR_SELECTION,
-    PERFORM_FEATURE_SELECTION_FLAG,
-    model_types,
+    model_config,
     query,
-    sql_values,
 )
 from app.params import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL, GOOD_HYPERPARAMETERS
 from db import Preprocessor, create_db_connection, load_data, split_data
@@ -113,17 +110,18 @@ class ModelTrainer:
         mlflow.set_experiment("LawVision Model Training")
 
         with mlflow.start_run(run_name="Model Training Run"):
-            for model_type in model_types:
+            for model_type in model_config.model_types:
                 with mlflow.start_run(nested=True, run_name=model_type):
                     mlflow.log_param("model_type", model_type)
                     mlflow.log_param(
-                        "perform_feature_selection", PERFORM_FEATURE_SELECTION_FLAG
+                        "perform_feature_selection",
+                        model_config.perform_feature_selection,
                     )
 
                     model_manager = ModelManager(
                         model_type=model_type,
                         good_hyperparameters=GOOD_HYPERPARAMETERS,
-                        input_dim=x_train.shape[1],
+                        nn_model=x_train.shape[1],
                     )
 
                     x_train_selected, x_test_selected = x_train, x_test
@@ -164,13 +162,13 @@ class ModelTrainer:
                 r2_comparison=r2_comparison,
                 elapsed_time=elapsed_time,
                 model_info={
-                    "model_types": model_types,
+                    "model_types": model_config.model_types,
                     "num_features": self.num_features,
                 },
             )
 
             plot_file_path = self.plot_and_save_importance(
-                model_manager.model, plot_params
+                model_manager.manager.model, plot_params
             )
 
             performance_data = {
@@ -182,8 +180,8 @@ class ModelTrainer:
             }
 
             model_info = {
-                "model_types": model_types,
-                "model_for_selection": MODEL_FOR_SELECTION,
+                "model_types": model_config.model_types,
+                "model_for_selection": model_config.model_for_selection,
             }
 
             notification_data = NotificationData(
@@ -209,7 +207,7 @@ class Preprocessing:
 
     def load_and_preprocess_data(self):
         """Load and preprocess data."""
-        data = load_data(self.engine, query, sql_values)
+        data = load_data(self.engine, query, model_config.sql_values)
         if self.filter_by and self.filter_value:
             data = data[data[self.filter_by] == self.filter_value]
         x_column, _y_column, y_bin = Preprocessor().preprocess_data(
@@ -221,8 +219,3 @@ class Preprocessing:
         self.total_cases = len(data)
         self.num_features = x_column.shape[1]
         return data, x_train, y_train, x_test, y_test
-
-
-if __name__ == "__main__":
-    trainer = ModelTrainer()
-    trainer.run()
