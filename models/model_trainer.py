@@ -12,11 +12,11 @@ from dotenv import load_dotenv
 import db
 from app.config import model_types, sql_values, model_for_selection, \
     perform_feature_selection, query
-from models.model_manager import ModelManager
 from app.params import GOOD_HYPERPARAMETERS, DISCORD_WEBHOOK_URL, DISCORD_AVATAR_URL
+from db import load_and_preprocess_data
+from models.model_manager import ModelManager
 from utils import compare_r2, write_current_r2, send_notification, plot_feature_importance, read_previous_r2, \
     save_importance_profile, load_importance_profile, compare_to_baseline
-from .data_handler import DataHandler
 
 load_dotenv()
 
@@ -66,8 +66,8 @@ class ModelTrainer:
             return plot_file_path
 
     def run(self):
-        data_handler = DataHandler(self.engine, query, sql_values, self.filter_by, self.filter_value)
-        data, x_train, y_train, x_test, y_test = data_handler.load_and_preprocess_data(self.outputs_dir)
+        data, x_train, y_train, x_test, y_test = load_and_preprocess_data(self.outputs_dir, self.engine, query,
+                                                                          sql_values, self.filter_by, self.filter_value)
         previous_r2 = read_previous_r2(self.previous_r2_file)
         model_r2_scores = []
 

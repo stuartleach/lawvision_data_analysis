@@ -1,4 +1,5 @@
 # Initialize the models package
 from .model_manager import ModelManager
+from .model_trainer import ModelTrainer
 
-__all__ = ["ModelManager"]
+__all__ = ["ModelManager", "ModelTrainer"]

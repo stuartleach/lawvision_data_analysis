@@ -5,6 +5,8 @@ import pandas as pd
 from sklearn.model_selection import StratifiedShuffleSplit
 from sqlalchemy import create_engine
 
+from db import Preprocessor
+
 
 def create_engine_connection(user, password, host, port, dbname):
     connection_string = f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
@@ -16,6 +18,20 @@ def load_data(engine, query, sql_values):
     data = pd.read_sql(query, engine, params=sql_values)
     logging.info("Data loaded successfully.")
     return data
+
+
+def filter_data(data, filter_by, filter_value):
+    return data[data[filter_by] == filter_value]
+
+
+def load_and_preprocess_data(outputs_dir, engine, query, sql_values, filter_by, filter_value):
+    data = load_data(engine, query, sql_values)
+    if filter_by and filter_value:
+        data = filter_data(data, filter_by, filter_value)
+    preprocessor = Preprocessor()
+    x, y, y_bin = preprocessor.preprocess_data(data, outputs_dir)
+    x_train, y_train, x_test, y_test = split_data(x, y_bin, outputs_dir)
+    return data, x_train, y_train, x_test, y_test
 
 
 def create_db_connection():
