@@ -12,3 +12,9 @@ __pycache__/
 /_old/
 /_old/**
 .DS_Store
+_mlruns
+_old
+__pycache__
+_outputs
+_mlruns/
+_old/
