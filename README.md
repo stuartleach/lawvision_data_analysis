@@ -13,7 +13,7 @@ In New York City, this often means a stint at Rikers Island, a notorious jail co
 ### _The purpose of this project is to understand how closely judges in New York State adhere to the law, as outlined in CPL 510.10, when setting bail._
 ### Dataset:
 1. [New York Pretrial Release Data](https://ww2.nycourts.gov/pretrial-release-data-33136)
-2. Census Average Median Income for New York State counties (TODO: link for reference)
+2. [Census Average Median Income for New York State counties]([TODO: link for reference](https://data.census.gov/profile/New_York_County,_New_York?g=050XX00US36061))
 
 ### Method:
 1. Create a "New York Judge" profile by analyzing the bail decisions of judges in New York State and using regression models such as Gradient Boosting and Random Forest to assign importance values to various features that might be relevant to the case.
