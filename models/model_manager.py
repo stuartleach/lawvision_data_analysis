@@ -14,13 +14,24 @@ from sklearn.ensemble import (
 from sklearn.inspection import PartialDependenceDisplay
 from sklearn.linear_model import Lasso, Ridge
 from sklearn.metrics import mean_squared_error, r2_score
-from tensorflow.keras.layers import Dense, Layer
+from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Sequential
 
-import utils
+from utils import sanitize_metric_name
 
 
 class ModelManager:
+    MODEL_MAP = {
+        "gradient_boosting": GradientBoostingRegressor,
+        "random_forest": RandomForestRegressor,
+        "hist_gradient_boosting": HistGradientBoostingRegressor,
+        "ada_boost": AdaBoostRegressor,
+        "bagging": BaggingRegressor,
+        "extra_trees": ExtraTreesRegressor,
+        "lasso": Lasso,
+        "ridge": Ridge,
+    }
+
     def __init__(self, model_type, good_hyperparameters, input_dim=None):
         self.model_type = model_type
         self.hyperparameters = good_hyperparameters
@@ -29,42 +40,18 @@ class ModelManager:
 
     def _get_model(self):
         try:
-            if self.model_type == "gradient_boosting":
-                return GradientBoostingRegressor(random_state=42,
-                                                 **(self.hyperparameters[
-                                                        "gradient_boosting"] if self.hyperparameters else {}))
-            elif self.model_type == "random_forest":
-                return RandomForestRegressor(random_state=42,
-                                             **(self.hyperparameters["random_forest"] if self.hyperparameters else {}))
-            elif self.model_type == "hist_gradient_boosting":
-                return HistGradientBoostingRegressor(random_state=42,
-                                                     **(self.hyperparameters[
-                                                            "hist_gradient_boosting"] if self.hyperparameters else {}))
-            elif self.model_type == "ada_boost":
-                return AdaBoostRegressor(random_state=42,
-                                         **(self.hyperparameters["ada_boost"] if self.hyperparameters else {}))
-            elif self.model_type == "bagging":
-                return BaggingRegressor(random_state=42,
-                                        **(self.hyperparameters["bagging"] if self.hyperparameters else {}))
-            elif self.model_type == "extra_trees":
-                return ExtraTreesRegressor(random_state=42,
-                                           **(self.hyperparameters["extra_trees"] if self.hyperparameters else {}))
-            elif self.model_type == "lasso":
-                return Lasso(random_state=42, **(self.hyperparameters["lasso"] if self.hyperparameters else {}))
-            elif self.model_type == "ridge":
-                return Ridge(random_state=42, **(self.hyperparameters["ridge"] if self.hyperparameters else {}))
+            if self.model_type in self.MODEL_MAP:
+                model_class = self.MODEL_MAP[self.model_type]
+                return model_class(random_state=42, **(self.hyperparameters.get(self.model_type, {})))
             elif self.model_type == "neural_network":
-                return KerasRegressor(model=Sequential(layers=Layer(), name="my_model"), epochs=10, batch_size=32)
+                return KerasRegressor(model=self._build_neural_network, epochs=10, batch_size=32)
             else:
                 raise ValueError(f"Unknown model type: {self.model_type}")
         except Exception as e:
             logging.error(f"Error initializing model {self.model_type}: {e}")
             raise
 
-    def _build_neural_network(self, layers=None, activation='relu', optimizer='adam'):
-        if layers is None:
-            layers = [64, 64]
-
+    def _build_neural_network(self, layers=[64, 64], activation='relu', optimizer='adam'):
         model = Sequential()
         model.add(Dense(layers[0], input_dim=self.input_dim, activation=activation))
         for layer in layers[1:]:
@@ -114,7 +101,7 @@ class ModelManager:
         mlflow.log_artifact(importance_file_path)
 
         for feature, importance_value in importance.items():
-            sanitized_feature_name = utils.MetricUtils.sanitize_metric_name(f"importance_{feature}")
+            sanitized_feature_name = sanitize_metric_name(f"importance_{feature}")
             mlflow.log_metric(sanitized_feature_name, importance_value)
 
         logging.info(f"Feature importances: \n{importance}")

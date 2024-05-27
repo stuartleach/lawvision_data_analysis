@@ -2,8 +2,9 @@ import logging
 
 import pandas as pd
 from sklearn.impute import SimpleImputer
-from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+
+from db import save_preprocessed_data
 
 
 def convert_bail_amount(data):
@@ -11,6 +12,29 @@ def convert_bail_amount(data):
     data.rename(columns={'first_bail_set_cash': 'bail_amount'}, inplace=True)
     logging.info(f"First few rows of data: {data.head()}")
     return data
+
+
+def drop_list_columns(data):
+    columns_to_drop = [column for column in data.columns if data[column].apply(lambda x: isinstance(x, list)).any()]
+    if columns_to_drop:
+        logging.warning(f"Columns {columns_to_drop} contain list values and will be dropped.")
+        data = data.drop(columns=columns_to_drop)
+    return data
+
+
+def separate_features_and_target(data):
+    x = data.drop(columns=['bail_amount', 'bail_amount_bin'])
+    y = data['bail_amount']
+    y_bin = data['bail_amount_bin']
+    return x, y, y_bin
+
+
+def normalize_columns(columns_to_normalize, x):
+    for column in columns_to_normalize:
+        if column in x.columns:
+            x[column] = StandardScaler().fit_transform(x[[column]])
+            logging.info(f"Normalized {column} column.")
+    return x
 
 
 class Preprocessor:
@@ -26,12 +50,12 @@ class Preprocessor:
     def preprocess_data(self, data, outputs_dir):
         data = convert_bail_amount(data)
         self._create_bins(data)
-        data = self._drop_list_columns(data)
+        data = drop_list_columns(data)
         data = self._encode_categorical_features(data)
-        x, y, y_bin = self._separate_features_and_target(data)
+        x, y, y_bin = separate_features_and_target(data)
         x, y, y_bin = self._handle_missing_values(x, y, y_bin)
-        x = self._normalize_columns(x)
-        data.save_preprocessed_data(x, outputs_dir)
+        x = normalize_columns(self.columns_to_normalize, x)
+        save_preprocessed_data(x, outputs_dir)
         return x, y, y_bin
 
     def _create_bins(self, data):
@@ -47,14 +71,6 @@ class Preprocessor:
             bin_counts = data['bail_amount_bin'].value_counts()
             logging.info(f"Adjusted bin counts: {bin_counts}")
 
-    @staticmethod
-    def _drop_list_columns(data):
-        columns_to_drop = [column for column in data.columns if data[column].apply(lambda x: isinstance(x, list)).any()]
-        if columns_to_drop:
-            logging.warning(f"Columns {columns_to_drop} contain list values and will be dropped.")
-            data = data.drop(columns=columns_to_drop)
-        return data
-
     def _encode_categorical_features(self, data):
         if self.encoding_strategy == 'label':
             for column in data.select_dtypes(include=['object']).columns:
@@ -67,13 +83,6 @@ class Preprocessor:
             logging.info("Categorical features encoded with One-Hot Encoding.")
         return data
 
-    @staticmethod
-    def _separate_features_and_target(data):
-        x = data.drop(columns=['bail_amount', 'bail_amount_bin'])
-        y = data['bail_amount']
-        y_bin = data['bail_amount_bin']
-        return x, y, y_bin
-
     def _handle_missing_values(self, x, y, y_bin):
         nan_count = y.isna().sum()
         logging.info(f"Number of NaN values in bail_amount: {nan_count}")
@@ -85,10 +94,3 @@ class Preprocessor:
         x = pd.DataFrame(self.imputer.fit_transform(x), columns=x.columns)
         logging.info("Filled NaN values in features with column medians.")
         return x, y, y_bin
-
-    def _normalize_columns(self, x):
-        for column in self.columns_to_normalize:
-            if column in x.columns:
-                x[column] = self.scaler.fit_transform(x[[column]])
-                logging.info(f"Normalized {column} column.")
-        return x
