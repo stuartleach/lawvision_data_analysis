@@ -1,16 +1,14 @@
-# config.py
-from utils import get_query
+from utils import QueryUtils
 
-# Configuration parameters
+# Model configuration
 # model_types = ["gradient_boosting", "random_forest", "hist_gradient_boosting", "ada_boost", "bagging", "extra_trees",
 #             "lasso", "ridge", "neural_network"]
-
-model_types = ["gradient_boosting"]  # Model types to use for training
-
+model_types = ["random_forest"]  # Model types to use for training
 tune_hyperparameters_flag = False  # Set to True to tune hyperparameters, False to skip
 perform_feature_selection = False  # Set to True to perform feature selection, False to skip
 model_for_selection = "random_forest"  # Model to use for feature selection
 
+# Data selection parameters
 case_limit = 10000000
 judge_names = []
 county_names = []
@@ -20,8 +18,19 @@ sql_values = {
     "county_names": county_names
 }
 
-# SQL query
-query_template = """
+# Generate SQL conditions for judges and counties
+judge_names_condition = ""
+if judge_names:
+    judge_names_list = ", ".join([f"'{name}'" for name in judge_names])
+    judge_names_condition = f"AND j.judge_name IN ({judge_names_list})"
+
+county_names_condition = ""
+if county_names:
+    county_names_list = ", ".join([f"'{name}'" for name in county_names])
+    county_names_condition = f"AND co.county_name IN ({county_names_list})"
+
+# SQL query template
+query_template = f"""
 SELECT 
     c.gender,
     c.ethnicity,
@@ -29,10 +38,6 @@ SELECT
     c.age_at_arrest,
     c.known_days_in_custody,
     c.top_charge_at_arraign,
-    /*CASE 
-        WHEN c.ror_at_arraign = 'Y' THEN 0 
-        ELSE c.first_bail_set_cash::numeric 
-    END AS*/ 
     c.first_bail_set_cash,
     c.prior_vfo_cnt,
     c.prior_nonvfo_cnt,
@@ -40,10 +45,8 @@ SELECT
     c.pend_nonvfo,
     c.pend_misd,
     c.pend_vfo,
-    -- c.rearrest_firearm,
     j.judge_name,
     i.median_household_income
-    -- i.population
 FROM
     pretrial.cases c
 JOIN
@@ -69,4 +72,5 @@ WHERE
 LIMIT %(limit)s;
 """
 
-query = get_query(sql_values, query_template)
+# Generate the final SQL query
+query = QueryUtils.get_query(sql_values, query_template)

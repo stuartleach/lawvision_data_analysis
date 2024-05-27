@@ -1,6 +1,10 @@
 # Hyperparameter grids for different models
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 HYPERPARAMETER_GRIDS = {
     "gradient_boosting": {
         'n_estimators': [100, 200, 300],  # Reduced range
@@ -54,7 +58,6 @@ HYPERPARAMETER_GRIDS = {
         'batch_size': [32, 64]
     }
 }
-
 # Good hyperparameters for different models
 GOOD_HYPERPARAMETERS = {
     "gradient_boosting": {
@@ -98,6 +101,6 @@ GOOD_HYPERPARAMETERS = {
         "optimizer": "adam"
     }
 }
-DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 
+DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 DISCORD_AVATAR_URL = os.environ.get("DISCORD_AVATAR_URL")
