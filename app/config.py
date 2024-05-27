@@ -1,37 +1,42 @@
+"""
+Configuration file for the model training pipeline.
+"""
+
 from utils import get_query
 
 # Model configuration
-# model_types = ["gradient_boosting", "random_forest", "hist_gradient_boosting", "ada_boost", "bagging", "extra_trees",
-#             "lasso", "ridge", "neural_network"]
+# model_types = ["gradient_boosting", "random_forest", "hist_gradient_boosting",
+#           "ada_boost", "bagging", "extra_trees", "lasso", "ridge", "neural_network"]
 model_types = ["random_forest"]  # Model types to use for training
-tune_hyperparameters_flag = False  # Set to True to tune hyperparameters, False to skip
-perform_feature_selection = False  # Set to True to perform feature selection, False to skip
-model_for_selection = "random_forest"  # Model to use for feature selection
+TUNE_HYPERPARAMETERS_FLAG = False  # Set to True to tune hyperparameters, False to skip
+PERFORM_FEATURE_SELECTION_FLAG = (
+    False  # Set to True to perform feature selection, False to skip
+)
+MODEL_FOR_SELECTION = "random_forest"  # Model to use for feature selection
 
 # Data selection parameters
-case_limit = 10000000
-judge_names = []
-county_names = []
+CASE_LIMIT = 10000000
+JUDGE_NAMES = []
+COUNTY_NAMES = []
 sql_values = {
-    "limit": case_limit,
-    "judge_names": judge_names,
-    "county_names": county_names
+    "limit": CASE_LIMIT,
+    "judge_names": JUDGE_NAMES,
+    "county_names": COUNTY_NAMES,
 }
 
 # Generate SQL conditions for judges and counties
-judge_names_condition = ""
-if judge_names:
-    judge_names_list = ", ".join([f"'{name}'" for name in judge_names])
-    judge_names_condition = f"AND j.judge_name IN ({judge_names_list})"
-
-county_names_condition = ""
-if county_names:
-    county_names_list = ", ".join([f"'{name}'" for name in county_names])
-    county_names_condition = f"AND co.county_name IN ({county_names_list})"
+JUDGE_NAMES_CONDITION = ""
+if JUDGE_NAMES:
+    JUDGE_NAMES_LIST = ", ".join([f"'{name}'" for name in JUDGE_NAMES])
+    JUDGE_NAMES_CONDITION = f"AND j.judge_name IN ({JUDGE_NAMES_LIST})"
+COUNTY_NAMES_CONDITION = ""
+if COUNTY_NAMES:
+    COUNTY_NAMES_LIST = ", ".join([f"'{name}'" for name in COUNTY_NAMES])
+    COUNTY_NAMES_CONDITION = f"AND co.county_name IN ({COUNTY_NAMES_LIST})"
 
 # SQL query template
 query_template = f"""
-SELECT 
+SELECT
     c.gender,
     c.ethnicity,
     r.race,
@@ -53,22 +58,22 @@ JOIN
     pretrial.races r ON c.race_id = r.race_uuid
 JOIN
     pretrial.counties co ON c.county_id = co.county_uuid
-JOIN 
+JOIN
     pretrial.ny_income i ON co.county_name = i.county
-JOIN 
+JOIN
     pretrial.judges j ON c.judge_id = j.judge_uuid
 JOIN
     pretrial.districts d ON c.district_id = d.district_uuid
-JOIN 
+JOIN
     pretrial.courts ct ON c.court_id = ct.court_uuid
-JOIN 
+JOIN
     pretrial.representation rep ON c.representation_id = rep.representation_uuid
 WHERE
     c.first_bail_set_cash IS NOT NULL
     AND c.first_bail_set_cash::numeric < 80000
     AND c.first_bail_set_cash::numeric > 1
-    {judge_names_condition}
-    {county_names_condition}
+    {JUDGE_NAMES_CONDITION}
+    {COUNTY_NAMES_CONDITION}
 LIMIT %(limit)s;
 """
 

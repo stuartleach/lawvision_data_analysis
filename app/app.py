@@ -1,13 +1,17 @@
-# Setup logging
+"""
+This module is the main entry point of the application.
+"""
+
 import logging
 
-from models.model_trainer import ModelTrainer
+from models import ModelTrainer
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
-class App:
-    def __init__(self):
-        self.trainer = ModelTrainer()
 
-    def run(self):
-        self.trainer.run()
+def run():
+    """
+    This method runs the application.
+    :return:
+    """
+    ModelTrainer().run()
