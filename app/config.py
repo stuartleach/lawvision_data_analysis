@@ -67,18 +67,16 @@ model_type = ModelType(
     extra_trees="extra_trees",
 )
 
-sql_values = SQLValues(
-    limit=1000000,
-    judge_names=[],
-    county_names=[],
-)
-
 model_config = ModelConfig(
     model_types=[model_type.gradient_boosting],
     model_for_selection=model_type.random_forest,
     perform_feature_selection=False,
     tune_hyperparameters=False,
-    sql_values=sql_values,
+    sql_values=SQLValues(
+        limit=1000000,
+        judge_names=[],
+        county_names=[],
+    ),
 )
 
 # Generate SQL conditions for judges and counties

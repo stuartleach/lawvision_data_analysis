@@ -8,10 +8,7 @@ import mlflow.sklearn
 import pandas as pd
 from dotenv import load_dotenv
 
-from app.config import (
-    model_config,
-    query,
-)
+from app.config import model_config, query
 from app.params import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL, GOOD_HYPERPARAMETERS
 from db import Preprocessor, create_db_connection, load_data, split_data
 from models.model_manager import ModelManager
@@ -35,20 +32,20 @@ load_dotenv()
 class TrainerConfig:
     """Data class for trainer configuration."""
 
-    outputs_dir: str = "outputs"
+    outputs_dir: str = "_outputs"
     webhook_url: str = DISCORD_WEBHOOK_URL
     avatar_url: str = DISCORD_AVATAR_URL
     baseline_profile_name: str = "baseline"
     start_time: float = time.time()
-    previous_r2_file: str = os.path.join("outputs", "previous_r2.txt")
+    previous_r2_file: str = os.path.join("_outputs", "previous_r2.txt")
 
 
 class ModelTrainer:
     """Model trainer class."""
 
-    def __init__(self, filter_by=None, filter_value=None):
+    def __init__(self, filter_type=None, filter_value=None):
         self.config = TrainerConfig()
-        self.filter_by = filter_by
+        self.filter_type = filter_type
         self.filter_value = filter_value
         self.engine = create_db_connection()
         self.total_cases = 0
@@ -56,7 +53,7 @@ class ModelTrainer:
         self.ensure_outputs_dir()
 
     def ensure_outputs_dir(self):
-        """Ensure that the outputs directory exists."""
+        """Ensure that the _outputs directory exists."""
         if not os.path.exists(self.config.outputs_dir):
             os.makedirs(self.config.outputs_dir)
 
@@ -99,7 +96,27 @@ class ModelTrainer:
 
     def run(self):
         """Run the model training process."""
-        preprocessor = Preprocessing(self.config, self.filter_by, self.filter_value)
+        if self.filter_type == "county":
+            filter_values = self.get_unique_values("county_name")
+        elif self.filter_type == "judge":
+            filter_values = self.get_unique_values("judge_name")
+        else:
+            filter_values = [None]
+
+        for value in filter_values:
+            self.train_model_for_filter(value)
+
+    def get_unique_values(self, column_name):
+        """Get a list of unique values for a specific column."""
+        data = load_data(self.engine, query, model_config.sql_values)
+        return data[column_name].unique()
+
+    def train_model_for_filter(self, filter_value):
+        """Train a model for a specific filter value.
+
+        :param filter_value:
+        """
+        preprocessor = Preprocessing(self.config, self.filter_type, filter_value)
         _, x_train, y_train, x_test, y_test = preprocessor.load_and_preprocess_data()
         self.total_cases = preprocessor.total_cases
         self.num_features = preprocessor.num_features
@@ -109,7 +126,9 @@ class ModelTrainer:
 
         mlflow.set_experiment("LawVision Model Training")
 
-        with mlflow.start_run(run_name="Model Training Run"):
+        with mlflow.start_run(
+                run_name=f"Model Training Run - {filter_value or 'Baseline'}"
+        ):
             for model_type in model_config.model_types:
                 with mlflow.start_run(nested=True, run_name=model_type):
                     mlflow.log_param("model_type", model_type)
@@ -193,13 +212,13 @@ class ModelTrainer:
             send_notification(
                 notification_data, DISCORD_WEBHOOK_URL, DISCORD_AVATAR_URL
             )
-            logging.info("Model training completed.")
+            logging.info("Model training completed for %s.", filter_value or "Baseline")
 
 
 class Preprocessing:
-    def __init__(self, config, filter_by=None, filter_value=None):
+    def __init__(self, config, filter_type=None, filter_value=None):
         self.config = config
-        self.filter_by = filter_by
+        self.filter_type = filter_type
         self.filter_value = filter_value
         self.total_cases = 0
         self.num_features = 0
@@ -208,8 +227,8 @@ class Preprocessing:
     def load_and_preprocess_data(self):
         """Load and preprocess data."""
         data = load_data(self.engine, query, model_config.sql_values)
-        if self.filter_by and self.filter_value:
-            data = data[data[self.filter_by] == self.filter_value]
+        if self.filter_type and self.filter_value:
+            data = data[data[self.filter_type] == self.filter_value]
         x_column, _y_column, y_bin = Preprocessor().preprocess_data(
             data, self.config.outputs_dir
         )
