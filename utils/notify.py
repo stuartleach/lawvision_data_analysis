@@ -46,10 +46,10 @@ def create_message(data: NotificationData) -> str:
 
 
 def send_discord_webhook(
-    webhook_url: str,
-    avatar_url: str,
-    message: str,
-    plot_file_path: Optional[str] = None,
+        webhook_url: str,
+        avatar_url: str,
+        message: str,
+        plot_file_path: Optional[str] = None,
 ):
     """
     Send a Discord webhook with the given message and plot file.
@@ -87,9 +87,9 @@ def send_discord_webhook(
 
 
 def send_notification(
-    data: NotificationData,
-    webhook_url: Optional[str] = None,
-    avatar_url: Optional[str] = None,
+        data: NotificationData,
+        webhook_url: Optional[str] = None,
+        avatar_url: Optional[str] = None,
 ):
     """Send a notification with the given data.
 
