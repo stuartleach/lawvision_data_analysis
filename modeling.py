@@ -22,7 +22,7 @@ from sklearn.model_selection import GridSearchCV
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.models import Sequential
 
-from config import HYPERPARAMETER_GRIDS
+from params import HYPERPARAMETER_GRIDS
 
 
 def train_model(X_train, y_train, model_type, good_hyperparameters):
