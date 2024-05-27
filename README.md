@@ -1,4 +1,4 @@
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Actions Status](https://github.com/stuartleach/lawvision_data_analysis/workflows/Ruff-Lint/badge.svg)](https://github.com/{user}/lawvision_data_analysis/actions) 
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![Actions Status](https://github.com/stuartleach/lawvision_data_analysis/workflows/Ruff-Lint/badge.svg)](https://github.com/stuartleach/lawvision_data_analysis/actions) 
 
 ### An Exploratory Analysis of Pretrial Data in New York State
 
