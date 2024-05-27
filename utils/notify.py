@@ -3,6 +3,8 @@ import os
 
 import requests
 
+from params import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL
+
 
 def create_message(avg_r2, r2_comparison, total_cases, time_difference, models, model, num_features):
     return (f"\n\n\n\n\n\n\nModel training completed.\n"
@@ -40,9 +42,12 @@ def send_discord_webhook(webhook_url, avatar_url, message, plot_file_path=None):
         logging.error(f"Response content: {response.content}")
 
 
-def send_notification(webhook_url, average_r2, r2_comparison, plot_file_path, model_types, model_for_selection,
+def send_notification(average_r2, r2_comparison, plot_file_path, model_types, model_for_selection,
                       total_cases, num_features,
                       time_difference=None):
+    webhook_url = DISCORD_WEBHOOK_URL
+    avatar_url = DISCORD_AVATAR_URL
+
     if not webhook_url or webhook_url == 'None':
         logging.error("Discord webhook URL is not set.")
         return
@@ -53,4 +58,4 @@ def send_notification(webhook_url, average_r2, r2_comparison, plot_file_path, mo
 
     message = create_message(average_r2, r2_comparison, total_cases, time_difference, models, model,
                              num_features)
-    send_discord_webhook(message, plot_file_path)
+    send_discord_webhook(webhook_url, avatar_url, message, plot_file_path)

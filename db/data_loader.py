@@ -29,6 +29,7 @@ def create_db_connection():
     return create_engine_connection(user, password, host, port, dbname)
 
 
+
 def save_preprocessed_data(x, outputs_dir):
     x.to_csv(os.path.join(outputs_dir, 'X.csv'), index=False)
 
