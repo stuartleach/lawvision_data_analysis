@@ -90,6 +90,19 @@ def plot_feature_importance(importance_df, r2, total_cases, r2_comparison, outpu
     return plot_file_path
 
 
+def create_message(avg_r2, r2_comparison, total_cases, time_difference, models, model, num_features):
+    return (f"\n\n\n\n\n\n\nModel training completed.\n"
+            f"Average R²:  \n **{avg_r2:.4f}**\n\n"
+            f"R² comparison: \n**{r2_comparison}**\n\n"
+            f"Total cases: \n**{total_cases}**\n\n"
+            f"Training time: \n**{time_difference:.2f}** seconds\n\n"
+            f"Models used: \n**{models}**\n\n"
+            f"Model used for feature selection: \n**{model}**\n\n"
+            f"Number of features: \n**{num_features}\n\n**"
+            f"Bar chart: \n"
+            )
+
+
 def send_discord_notification(webhook_url, message, plot_file_path=None, avatar_url=None):
     data = {
         "content": message,
@@ -110,3 +123,16 @@ def send_discord_notification(webhook_url, message, plot_file_path=None, avatar_
     else:
         print(f"Failed to send notification. Status code: {response.status_code}")
         print(f"Response content: {response.content}")
+
+
+def get_query(sql_values_to_interpolate, q_template):
+    judge_names_condition = "AND j.judge_name = ANY(%(judge_names)s)" if sql_values_to_interpolate[
+        "judge_names"] else ""
+    county_names_condition = "AND co.county_name = ANY(%(county_names)s)" if sql_values_to_interpolate[
+        "county_names"] else ""
+
+    resulting_query = q_template.format(
+        judge_names_condition=judge_names_condition,
+        county_names_condition=county_names_condition
+    )
+    return resulting_query
