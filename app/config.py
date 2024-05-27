@@ -20,11 +20,24 @@ class SQLValues:
     county_names: List[str]
 
 
-sql_values = SQLValues(
-    limit=1000000,
-    judge_names=[],
-    county_names=[],
-)
+@dataclass
+class ModelType:
+    """Class to define the model types.
+
+    :param gradient-boosting:
+    :param random-forest:
+    :param hist-gradient-boosting:
+    :param ada-boost:
+    :param bagging:
+    :param extra-trees:
+    """
+
+    gradient_boosting: str
+    random_forest: str
+    hist_gradient_boosting: str
+    ada_boost: str
+    bagging: str
+    extra_trees: str
 
 
 @dataclass
@@ -45,14 +58,28 @@ class ModelConfig:
     sql_values: SQLValues
 
 
+model_type = ModelType(
+    gradient_boosting="gradient_boosting",
+    random_forest="random_forest",
+    hist_gradient_boosting="hist_gradient_boosting",
+    ada_boost="ada_boost",
+    bagging="bagging",
+    extra_trees="extra_trees",
+)
+
+sql_values = SQLValues(
+    limit=1000000,
+    judge_names=[],
+    county_names=[],
+)
+
 model_config = ModelConfig(
-    model_types=["random_forest", "gradient_boosting"],
-    model_for_selection="random_forest",
+    model_types=[model_type.gradient_boosting],
+    model_for_selection=model_type.random_forest,
     perform_feature_selection=False,
     tune_hyperparameters=False,
     sql_values=sql_values,
 )
-
 
 # Generate SQL conditions for judges and counties
 JUDGE_NAMES_CONDITION = ""
