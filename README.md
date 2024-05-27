@@ -34,4 +34,4 @@ The purpose of this project is to understand how closely judges in New York Stat
 
 ## Disclaimer
 
-**This is not, and will never be,** a tool to be used by counsel. It can't teach a lawyer what to emphasize on their client's behalf. This model will never be as effective as a reasonably perceptive defense attorney. This project is only to understand the extent that judges in New York State abide by the rules laid out in CPL 510.10.
+**This is not and will never be** a tool to be used by counsel. It can't teach a lawyer what to emphasize on their client's behalf. This model will never be as effective as a reasonably perceptive defense attorney. This project is only to understand the extent that judges in New York State abide by the rules laid out in CPL 510.10.
