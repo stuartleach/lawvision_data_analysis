@@ -21,7 +21,7 @@ def get_query(sql_values_to_interpolate, q_template):
 
 
 def sanitize_metric_name(name):
-    return re.sub(r'[^a-zA-Z0-9_\- .\/]', '_', name)
+    return re.sub(r'[^a-zA-Z0-9_\- .]', '_', name)
 
 
 def compare_r2(previous_r2, average_r2):
@@ -73,7 +73,7 @@ def compare_to_baseline(importance_df, baseline_df):
 
 
 def plot_feature_importance(importance_df, r2, total_cases, r2_comparison, outputs_dir, elapsed_time, model_types,
-                            num_features, model_for_selection):
+                            num_features):
     plt.figure(figsize=(20, 32))
     plt.style.use('seaborn-darkgrid')
     ax = sns.barplot(x='Importance', y='Feature', data=importance_df.head(20), palette='viridis')
@@ -110,5 +110,3 @@ def plot_feature_importance(importance_df, r2, total_cases, r2_comparison, outpu
     plt.show()
 
     return plot_file_path
-
-
