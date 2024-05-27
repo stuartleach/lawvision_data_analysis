@@ -51,7 +51,9 @@ class ModelManager:
             logging.error(f"Error initializing model {self.model_type}: {e}")
             raise
 
-    def _build_neural_network(self, layers=[64, 64], activation='relu', optimizer='adam'):
+    def _build_neural_network(self, layers=None, activation='relu', optimizer='adam'):
+        if layers is None:
+            layers = [64, 64]
         model = Sequential()
         model.add(Dense(layers[0], input_dim=self.input_dim, activation=activation))
         for layer in layers[1:]:
@@ -60,17 +62,17 @@ class ModelManager:
         model.compile(loss='mean_squared_error', optimizer=optimizer)
         return model
 
-    def train(self, X_train, y_train):
+    def train(self, x_train, y_train):
         try:
-            self.model.fit(X_train, y_train)
+            self.model.fit(x_train, y_train)
             logging.info(f"{self.model_type} model training completed.")
         except Exception as e:
             logging.error(f"Error training model {self.model_type}: {e}")
             raise
 
-    def evaluate(self, X_test, y_test):
+    def evaluate(self, x_test, y_test):
         try:
-            y_pred = self.model.predict(X_test)
+            y_pred = self.model.predict(x_test)
             mse = mean_squared_error(y_test, y_pred)
             r2 = r2_score(y_test, y_pred)
             logging.info(f"Mean Squared Error: {mse}")
@@ -80,18 +82,18 @@ class ModelManager:
             logging.error(f"Error evaluating model {self.model_type}: {e}")
             raise
 
-    def log_metrics(self, mse, r2, X, outputs_dir):
+    def log_metrics(self, mse, r2, x, outputs_dir):
         mlflow.log_metric("mse", mse)
         mlflow.log_metric("r2", r2)
         mlflow.sklearn.log_model(self.model, "model")
 
         if hasattr(self.model, "feature_importances_"):
-            self._log_feature_importances(X, outputs_dir)
+            self._log_feature_importances(x, outputs_dir)
         else:
-            self._log_shap_values(X, outputs_dir)
+            self._log_shap_values(x, outputs_dir)
 
-    def _log_feature_importances(self, X, outputs_dir):
-        importance = pd.Series(self.model.feature_importances_, index=X.columns)
+    def _log_feature_importances(self, x, outputs_dir):
+        importance = pd.Series(self.model.feature_importances_, index=x.columns)
         importance.sort_values(ascending=False, inplace=True)
 
         importance_df = importance.reset_index()
@@ -106,10 +108,10 @@ class ModelManager:
 
         logging.info(f"Feature importances: \n{importance}")
 
-    def _log_shap_values(self, X, outputs_dir):
-        explainer = shap.Explainer(self.model, X)
-        shap_values = explainer(X)
-        shap.summary_plot(shap_values, X, show=False)
+    def _log_shap_values(self, x, outputs_dir):
+        explainer = shap.Explainer(self.model, x)
+        shap_values = explainer(x)
+        shap.summary_plot(shap_values, x, show=False)
         shap_file_path = os.path.join(outputs_dir, 'shap_summary.png')
         plt.savefig(shap_file_path)
         mlflow.log_artifact(shap_file_path)
