@@ -8,7 +8,9 @@ from sqlalchemy import create_engine
 
 
 def create_engine_connection(user, password, host, port, dbname):
-    """Create a connection to the database.
+    """
+    Create a connection to the database.
+
     :param user:
     :param password:
     :param host:
@@ -21,7 +23,9 @@ def create_engine_connection(user, password, host, port, dbname):
 
 
 def load_data(engine, query, sql_values):
-    """Load data from the database.
+    """
+    Load data from the database.
+
     :param engine:
     :param query:
     :param sql_values:
@@ -34,7 +38,9 @@ def load_data(engine, query, sql_values):
 
 
 def filter_data(data, filter_by, filter_value):
-    """Filter data based on a column and value.
+    """
+    Filter data based on a column and value.
+
     :param data:
     :param filter_by:
     :param filter_value:
@@ -44,7 +50,9 @@ def filter_data(data, filter_by, filter_value):
 
 
 def create_db_connection():
-    """Create a connection to the database.
+    """
+    Create a connection to the database.
+
     :return:
     """
     user = os.environ.get("DB_USER")
@@ -56,7 +64,9 @@ def create_db_connection():
 
 
 def save_preprocessed_data(x_data, outputs_dir):
-    """Save preprocessed data to a CSV file.
+    """
+    Save preprocessed data to a CSV file.
+
     :param x_data:
     :param outputs_dir:
     :return:
@@ -65,7 +75,9 @@ def save_preprocessed_data(x_data, outputs_dir):
 
 
 def save_split_data(x_train, x_test, outputs_dir):
-    """Save the split data to CSV files.
+    """
+    Save the split data to CSV files.
+
     :param x_train:
     :param x_test:
     :param outputs_dir:
@@ -76,7 +88,9 @@ def save_split_data(x_train, x_test, outputs_dir):
 
 
 def split_data(x_bin, y_bin, outputs_dir):
-    """Split the data into training and test sets.
+    """
+    Split the data into training and test sets.
+
     :param x_bin:
     :param y_bin:
     :param outputs_dir:
