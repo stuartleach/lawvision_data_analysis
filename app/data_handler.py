@@ -1,5 +1,5 @@
-from data.data_loader import load_data
-from data.preprocessor import Preprocessor
+from db.data_loader import load_data, split_data
+from db.preprocessor import Preprocessor
 
 
 class DataHandler:
@@ -16,7 +16,7 @@ class DataHandler:
             data = self._filter_data(data)
         preprocessor = Preprocessor()
         x, y, y_bin = preprocessor.preprocess_data(data, outputs_dir)
-        x_train, y_train, x_test, y_test = preprocessor.split_data(x, y_bin, outputs_dir)
+        x_train, y_train, x_test, y_test = split_data(x, y_bin, outputs_dir)
         return data, x_train, y_train, x_test, y_test
 
     def _filter_data(self, data):
