@@ -6,6 +6,8 @@ import pandas as pd
 from sklearn.model_selection import StratifiedShuffleSplit
 from sqlalchemy import create_engine
 
+from app.config import SQLValues
+
 
 def create_engine_connection(user, password, host, port, dbname):
     """
@@ -116,7 +118,7 @@ def split_data(x_bin, y_bin, outputs_dir):
 class DataLoaderConfig:
     engine: any
     query: str
-    sql_values: dict
+    sql_values: SQLValues
     outputs_dir: str
 
 
