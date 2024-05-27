@@ -38,8 +38,6 @@ def create_message(data: NotificationData) -> str:
         f"Total cases: \n**{performance_data['total_cases']}**\n\n"
         f"Training time: \n**{performance_data['time_difference']:.2f}** seconds\n\n"
         f"Models used: \n**{models}**\n\n"
-        f"Model used for feature selection: "
-        f"\n**{model_info['model_for_selection']}**\n\n"
         f"Number of features: \n**{performance_data['num_features']}\n\n**"
         f"Bar chart: \n"
     )

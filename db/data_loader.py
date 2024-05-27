@@ -4,12 +4,13 @@ from dataclasses import dataclass
 
 import pandas as pd
 from sklearn.model_selection import StratifiedShuffleSplit
-from sqlalchemy import create_engine
+from sqlalchemy import Engine, create_engine
 
 from app.config import SQLValues
 
 
-def create_engine_connection(user, password, host, port, dbname):
+def create_engine_connection(user: str, password: str,
+                             host: str, port: str, dbname: str):
     """
     Create a connection to the database.
 
@@ -39,7 +40,7 @@ def load_data(engine, query, sql_values):
     return data
 
 
-def filter_data(data, filter_by, filter_value):
+def filter_data(data: pd.DataFrame, filter_by: str, filter_value: str):
     """
     Filter data based on a column and value.
 
@@ -65,7 +66,7 @@ def create_db_connection():
     return create_engine_connection(user, password, host, port, dbname)
 
 
-def save_preprocessed_data(x_data, outputs_dir):
+def save_preprocessed_data(x_data: pd.DataFrame, outputs_dir: str):
     """
     Save preprocessed data to a CSV file.
 
@@ -76,7 +77,7 @@ def save_preprocessed_data(x_data, outputs_dir):
     x_data.to_csv(os.path.join(outputs_dir, "X.csv"), index=False)
 
 
-def save_split_data(x_train, x_test, outputs_dir):
+def save_split_data(x_train: pd.DataFrame, x_test: pd.DataFrame, outputs_dir: str):
     """
     Save the split data to CSV files.
 
@@ -89,7 +90,7 @@ def save_split_data(x_train, x_test, outputs_dir):
     x_test.to_csv(os.path.join(outputs_dir, "X_test.csv"), index=False)
 
 
-def split_data(x_bin, y_bin, outputs_dir):
+def split_data(x_bin: pd.DataFrame, y_bin: pd.DataFrame, outputs_dir: str):
     """
     Split the data into training and test sets.
 

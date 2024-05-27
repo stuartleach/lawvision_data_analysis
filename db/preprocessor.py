@@ -72,11 +72,11 @@ def normalize_columns(columns_to_normalize, x):
 
 class Preprocessor:
     def __init__(
-        self,
-        columns_to_normalize=None,
-        num_bins=10,
-        imputation_strategy="median",
-        encoding_strategy="label",
+            self,
+            columns_to_normalize=None,
+            num_bins=10,
+            imputation_strategy="median",
+            encoding_strategy="label",
     ):
         self.columns_to_normalize = columns_to_normalize or [
             "median_income",

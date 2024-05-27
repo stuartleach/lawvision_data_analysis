@@ -10,26 +10,34 @@ from utils import get_query
 class SQLValues:
     """Data class for SQL values.
 
-    :param limit:
-    :param judge_names:
-    :param county_names:
+    :param limit: Maximum number of rows to return.
+    :param judge_names: List of judge names to filter by.
+    :param county_names: List of county names to filter by.
     """
 
     limit: int
     judge_names: List[str]
     county_names: List[str]
 
+    def to_dict(self):
+        """Convert SQLValues to dictionary format."""
+        return {
+            "limit": self.limit,
+            "judge_names": self.judge_names,
+            "county_names": self.county_names,
+        }
+
 
 @dataclass
 class ModelType:
     """Class to define the model types.
 
-    :param gradient-boosting:
-    :param random-forest:
-    :param hist-gradient-boosting:
-    :param ada-boost:
-    :param bagging:
-    :param extra-trees:
+    :param gradient_boosting: Gradient Boosting model type.
+    :param random_forest: Random Forest model type.
+    :param hist_gradient_boosting: Histogram-based Gradient Boosting model type.
+    :param ada_boost: AdaBoost model type.
+    :param bagging: Bagging model type.
+    :param extra_trees: Extra Trees model type.
     """
 
     gradient_boosting: str
@@ -44,16 +52,12 @@ class ModelType:
 class ModelConfig:
     """Data class for model configuration.
 
-    :param model_types:
-    :param model_for_selection:
-    :param perform_feature_selection:
-    :param tune_hyperparameters:
-    :param sql_values:
+    :param model_types: List of model types to use for training.
+    :param tune_hyperparameters: Flag to tune hyperparameters.
+    :param sql_values: SQL values for filtering data.
     """
 
     model_types: List[str]
-    model_for_selection: str
-    perform_feature_selection: bool
     tune_hyperparameters: bool
     sql_values: SQLValues
 
@@ -68,9 +72,7 @@ model_type = ModelType(
 )
 
 model_config = ModelConfig(
-    model_types=[model_type.gradient_boosting],
-    model_for_selection=model_type.random_forest,
-    perform_feature_selection=False,
+    model_types=[model_type.random_forest],
     tune_hyperparameters=False,
     sql_values=SQLValues(
         limit=1000000,
