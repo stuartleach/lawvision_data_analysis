@@ -1,6 +1,4 @@
-"""
-Configuration file for the model training pipeline.
-"""
+"""Configuration file for the model training pipeline."""
 
 from utils import get_query
 

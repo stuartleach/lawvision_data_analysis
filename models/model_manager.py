@@ -1,6 +1,4 @@
-"""
-Module to manage the model creation.
-"""
+"""Module to manage the model creation."""
 
 import logging
 import os
@@ -26,9 +24,7 @@ from utils import sanitize_metric_name
 
 
 class ModelManager:
-    """
-    Class to manage the model training, evaluation, and interpretation.
-    """
+    """Class to manage the model training, evaluation, and interpretation."""
 
     MODEL_MAP = {
         "gradient_boosting": GradientBoostingRegressor,
@@ -60,8 +56,7 @@ class ModelManager:
             raise
 
     def train(self, x_train, y_train):
-        """
-        Train the model using the given training data.
+        """Train the model using the given training data.
         :param x_train:
         :param y_train:
         :return:
@@ -74,8 +69,7 @@ class ModelManager:
             raise
 
     def evaluate(self, x_test, y_test):
-        """
-        Evaluate the model using the given test data.
+        """Evaluate the model using the given test data.
         :param x_test:
         :param y_test:
         :return:
@@ -92,8 +86,7 @@ class ModelManager:
             raise
 
     def log_metrics(self, mse, r2, x, outputs_dir):
-        """
-        Log the metrics and model artifacts.
+        """Log the metrics and model artifacts.
         :param mse:
         :param r2:
         :param x:
@@ -138,8 +131,7 @@ class ModelManager:
         )
 
     def plot_partial_dependence(self, x, features, outputs_dir):
-        """
-        Plot partial dependence for the given features.
+        """Plot partial dependence for the given features.
         :param x:
         :param features:
         :param outputs_dir:
@@ -155,8 +147,7 @@ class ModelManager:
         plt.show()
 
     def save_model(self, path):
-        """
-        Save the model to the given path.
+        """Save the model to the given path.
         :param path:
         :return:
         """
@@ -168,8 +159,7 @@ class ModelManager:
             raise
 
     def load_model(self, path):
-        """
-        Load the model from the given path.
+        """Load the model from the given path.
         :param path:
         :return:
         """

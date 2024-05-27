@@ -1,0 +1,60 @@
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+# Configuration for line length and indentation.
+line-length = 88
+indent-width = 4
+
+# Target Python version.
+target-version = "py38"
+
+[tool.ruff.lint]
+# Enable specific rules and disable others.
+select = ["E4", "E7", "E9", "F", "W", "N", "PL", "C", "E", "FIX", "LOG", "I", "UP"]
+ignore = []
+
+# Allow fixing for all enabled rules.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# Configuration for code formatting.
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+# Configuration for auto-formatting code examples in docstrings.
+#docstring-code-format = false
+docstring-code-line-length = "dynamic"

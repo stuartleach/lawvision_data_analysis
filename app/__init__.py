@@ -1,6 +1,4 @@
-"""
-This module is the entry point of the application.
-"""
+"""This module is the entry point of the application."""
 
 from .app import run
 from .params import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL, GOOD_HYPERPARAMETERS

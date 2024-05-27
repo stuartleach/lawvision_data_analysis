@@ -1,6 +1,4 @@
-"""
-Utility functions for the bail project.
-"""
+"""Utility functions for the bail project."""
 
 import logging
 import os
@@ -13,8 +11,8 @@ from matplotlib import pyplot as plt
 
 
 def get_query(sql_values_to_interpolate, q_template):
-    """
-    Generate the final SQL query.
+    """Generate the final SQL query.
+
     :param sql_values_to_interpolate:
     :param q_template:
     :return:
@@ -38,8 +36,8 @@ def get_query(sql_values_to_interpolate, q_template):
 
 
 def sanitize_metric_name(name):
-    """
-    Sanitize the metric name.
+    """Sanitize the metric name.
+
     :param name:
     :return:
     """
@@ -47,8 +45,8 @@ def sanitize_metric_name(name):
 
 
 def compare_r2(previous_r2, average_r2):
-    """
-    Compare the R² values.
+    """Compare the R² values.
+
     :param previous_r2:
     :param average_r2:
     :return:
@@ -63,20 +61,20 @@ def compare_r2(previous_r2, average_r2):
 
 
 def read_previous_r2(file_path):
-    """
-    Read the previous R² value.
+    """Read the previous R² value.
+
     :param file_path:
     :return:
     """
     if os.path.exists(file_path):
-        with open(file_path, "r", encoding="utf-8") as file:
+        with open(file_path, encoding="utf-8") as file:
             return float(file.read())
     return None
 
 
 def write_current_r2(file_path, r2_value):
-    """
-    Write the current R² value.
+    """Write the current R² value.
+
     :param file_path:
     :param r2_value:
     :return:
@@ -86,8 +84,8 @@ def write_current_r2(file_path, r2_value):
 
 
 def save_importance_profile(importance_df, profile_name, outputs_dir):
-    """
-    Save the importance profile.
+    """Save the importance profile.
+
     :param importance_df:
     :param profile_name:
     :param outputs_dir:
@@ -100,8 +98,8 @@ def save_importance_profile(importance_df, profile_name, outputs_dir):
 
 
 def load_importance_profile(profile_name, outputs_dir):
-    """
-    Load the importance profile.
+    """Load the importance profile.
+
     :param profile_name:
     :param outputs_dir:
     :return:
@@ -116,8 +114,8 @@ def load_importance_profile(profile_name, outputs_dir):
 
 
 def compare_to_baseline(importance_df, baseline_df):
-    """
-    Compare the importance to the baseline.
+    """Compare the importance to the baseline.
+
     :param importance_df:
     :param baseline_df:
     :return:
@@ -134,9 +132,7 @@ def compare_to_baseline(importance_df, baseline_df):
 
 @dataclass
 class PlotParams:
-    """
-    Data class for plot parameters.
-    """
+    """Data class for plot parameters."""
 
     r2: float
     total_cases: int
@@ -146,8 +142,8 @@ class PlotParams:
 
 
 def plot_feature_importance(importance_df, outputs_dir, plot_params: PlotParams):
-    """
-    Plot the feature importance.
+    """Plot the feature importance.
+
     :param importance_df:
     :param outputs_dir:
     :param plot_params:

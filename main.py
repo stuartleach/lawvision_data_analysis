@@ -1,6 +1,4 @@
-"""
-This is the main file that runs the application.
-"""
+"""This is the main file that runs the application."""
 
 from app import run
 
