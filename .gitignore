@@ -4,6 +4,7 @@
 /outputs
 /__pycache__/*
 /__pycache__/
+__pycache__/
 /mlruns
 .env
 /outputs/
