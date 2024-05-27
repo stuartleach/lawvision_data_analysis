@@ -104,5 +104,3 @@ GOOD_HYPERPARAMETERS = {
         "optimizer": "adam"
     }
 }
-
-
