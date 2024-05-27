@@ -1,20 +1,20 @@
-"""
-This module contains functions for sending notifications.
-"""
+"""This module contains functions for sending notifications."""
 
 import logging
 import os
 from dataclasses import dataclass
+from typing import Optional
 
 import requests
-
-from app import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL
 
 
 @dataclass
 class NotificationData:
-    """
-    Data class for notification data.
+    """Data class for notification data.
+
+    :param performance_data:
+    :param plot_file_path:
+    :param model_info:
     """
 
     performance_data: dict
@@ -23,8 +23,9 @@ class NotificationData:
 
 
 def create_message(data: NotificationData) -> str:
-    """
-    Create a message for the notification.
+    """Create a message for the notification.
+
+    :param data:
     """
     performance_data = data.performance_data
     model_info = data.model_info
@@ -37,17 +38,27 @@ def create_message(data: NotificationData) -> str:
         f"Total cases: \n**{performance_data['total_cases']}**\n\n"
         f"Training time: \n**{performance_data['time_difference']:.2f}** seconds\n\n"
         f"Models used: \n**{models}**\n\n"
-        f"Model used for feature selection: \n**{model_info['model_for_selection']}**\n\n"
+        f"Model used for feature selection: "
+        f"\n**{model_info['model_for_selection']}**\n\n"
         f"Number of features: \n**{performance_data['num_features']}\n\n**"
         f"Bar chart: \n"
     )
 
 
 def send_discord_webhook(
-    webhook_url: str, avatar_url: str, message: str, plot_file_path: str = None
+    webhook_url: str,
+    avatar_url: str,
+    message: str,
+    plot_file_path: Optional[str] = None,
 ):
     """
-    Send a Discord webhook notification.
+    Send a Discord webhook with the given message and plot file.
+
+    :param webhook_url:
+    :param avatar_url:
+    :param message:
+    :param plot_file_path:
+    :return:
     """
     data = {
         "content": message,
@@ -75,12 +86,17 @@ def send_discord_webhook(
         logging.error("Response content: %s", response.content.decode("utf-8"))
 
 
-def send_notification(data: NotificationData):
+def send_notification(
+    data: NotificationData,
+    webhook_url: Optional[str] = None,
+    avatar_url: Optional[str] = None,
+):
+    """Send a notification with the given data.
+
+    :param avatar_url:
+    :param webhook_url:
+    :param data:
     """
-    Send a notification with the given data.
-    """
-    webhook_url = DISCORD_WEBHOOK_URL
-    avatar_url = DISCORD_AVATAR_URL
 
     if not webhook_url or webhook_url == "None":
         logging.error("Discord webhook URL is not set.")

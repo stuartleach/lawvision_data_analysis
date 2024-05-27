@@ -1,7 +1,3 @@
-"""
-Model trainer module.
-"""
-
 import logging
 import os
 import time
@@ -20,7 +16,7 @@ from app.config import (
     sql_values,
 )
 from app.params import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL, GOOD_HYPERPARAMETERS
-from db import create_db_connection, load_and_preprocess_data
+from db import Preprocessor, create_db_connection, load_data, split_data
 from models.model_manager import ModelManager
 from utils import (
     NotificationData,
@@ -40,9 +36,7 @@ load_dotenv()
 
 @dataclass
 class TrainerConfig:
-    """
-    Data class for trainer configuration.
-    """
+    """Data class for trainer configuration."""
 
     outputs_dir: str = "outputs"
     webhook_url: str = DISCORD_WEBHOOK_URL
@@ -53,27 +47,28 @@ class TrainerConfig:
 
 
 class ModelTrainer:
-    """
-    Model trainer class.
-    """
+    """Model trainer class."""
 
     def __init__(self, filter_by=None, filter_value=None):
         self.config = TrainerConfig()
         self.filter_by = filter_by
         self.filter_value = filter_value
         self.engine = create_db_connection()
+        self.total_cases = 0
+        self.num_features = 0
         self.ensure_outputs_dir()
 
     def ensure_outputs_dir(self):
-        """
-        Ensure that the outputs directory exists.
-        """
+        """Ensure that the outputs directory exists."""
         if not os.path.exists(self.config.outputs_dir):
             os.makedirs(self.config.outputs_dir)
 
     def plot_and_save_importance(self, model, plot_params: PlotParams):
-        """
-        Plot and save feature importance.
+        """Plot and save feature importance.
+
+        :param model:
+        :param plot_params:
+        :return:
         """
         if hasattr(model, "feature_importances_"):
             importance_df = pd.read_csv(
@@ -106,21 +101,14 @@ class ModelTrainer:
         return "No feature importances available."
 
     def run(self):
-        """
-        Run the model training process.
-        """
-        _, x_train, y_train, x_test, y_test = load_and_preprocess_data(
-            self.config.outputs_dir,
-            self.engine,
-            query,
-            sql_values,
-            self.filter_by,
-            self.filter_value,
-        )
+        """Run the model training process."""
+        preprocessor = Preprocessing(self.config, self.filter_by, self.filter_value)
+        _, x_train, y_train, x_test, y_test = preprocessor.load_and_preprocess_data()
+        self.total_cases = preprocessor.total_cases
+        self.num_features = preprocessor.num_features
+
         previous_r2 = read_previous_r2(self.config.previous_r2_file)
         model_r2_scores = []
-
-        selected_features = x_train.columns
 
         mlflow.set_experiment("LawVision Model Training")
 
@@ -154,7 +142,7 @@ class ModelTrainer:
                     # Plot Partial Dependence
                     model_manager.plot_partial_dependence(
                         pd.DataFrame(x_test_selected, columns=x_train.columns),
-                        features=selected_features,
+                        features=x_train.columns.tolist(),
                         outputs_dir=self.config.outputs_dir,
                     )
 
@@ -181,7 +169,7 @@ class ModelTrainer:
                 },
             )
 
-            plot_file_path = self._plot_and_save_importance(
+            plot_file_path = self.plot_and_save_importance(
                 model_manager.model, plot_params
             )
 
@@ -204,5 +192,37 @@ class ModelTrainer:
                 model_info=model_info,
             )
 
-            send_notification(notification_data)
+            send_notification(
+                notification_data, DISCORD_WEBHOOK_URL, DISCORD_AVATAR_URL
+            )
             logging.info("Model training completed.")
+
+
+class Preprocessing:
+    def __init__(self, config, filter_by=None, filter_value=None):
+        self.config = config
+        self.filter_by = filter_by
+        self.filter_value = filter_value
+        self.total_cases = 0
+        self.num_features = 0
+        self.engine = create_db_connection()
+
+    def load_and_preprocess_data(self):
+        """Load and preprocess data."""
+        data = load_data(self.engine, query, sql_values)
+        if self.filter_by and self.filter_value:
+            data = data[data[self.filter_by] == self.filter_value]
+        x_column, _y_column, y_bin = Preprocessor().preprocess_data(
+            data, self.config.outputs_dir
+        )
+        x_train, y_train, x_test, y_test = split_data(
+            x_column, y_bin, self.config.outputs_dir
+        )
+        self.total_cases = len(data)
+        self.num_features = x_column.shape[1]
+        return data, x_train, y_train, x_test, y_test
+
+
+if __name__ == "__main__":
+    trainer = ModelTrainer()
+    trainer.run()

@@ -3,7 +3,6 @@ from .data_loader import (
     create_db_connection,
     create_engine_connection,
     filter_data,
-    load_and_preprocess_data,
     load_data,
     save_preprocessed_data,
     save_split_data,
@@ -21,5 +20,4 @@ __all__ = [
     "convert_bail_amount",
     "split_data",
     "filter_data",
-    "load_and_preprocess_data",
 ]

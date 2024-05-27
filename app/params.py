@@ -1,6 +1,4 @@
-"""
-This file contains the parameters used in the application.
-"""
+"""This file contains the parameters used in the application."""
 
 import os
 

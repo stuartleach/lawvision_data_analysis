@@ -82,11 +82,13 @@ class Preprocessor:
         )
         bin_counts = data["bail_amount_bin"].value_counts()
         logging.info(f"Bin counts before adjustment: {bin_counts}")
-        while any(bin_counts < 2):
+        bin_count_threshold = 2
+        while any(bin_counts < bin_count_threshold):
             self.num_bins -= 1
-            if self.num_bins < 2:
+            if self.num_bins < bin_count_threshold:
                 raise ValueError(
-                    "Cannot create bins with at least 2 samples each. Consider increasing the sample size."
+                    "Cannot create bins with at least 2 samples each. Consider "
+                    "increasing the sample size."
                 )
             data["bail_amount_bin"] = pd.cut(
                 data["bail_amount"], bins=self.num_bins, labels=False

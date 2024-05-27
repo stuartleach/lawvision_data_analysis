@@ -6,12 +6,9 @@ import pandas as pd
 from sklearn.model_selection import StratifiedShuffleSplit
 from sqlalchemy import create_engine
 
-from db import Preprocessor
-
 
 def create_engine_connection(user, password, host, port, dbname):
-    """
-    Create a connection to the database.
+    """Create a connection to the database.
     :param user:
     :param password:
     :param host:
@@ -24,6 +21,12 @@ def create_engine_connection(user, password, host, port, dbname):
 
 
 def load_data(engine, query, sql_values):
+    """Load data from the database.
+    :param engine:
+    :param query:
+    :param sql_values:
+    :return:
+    """
     logging.info("Loading data from database...")
     data = pd.read_sql(query, engine, params=sql_values)
     logging.info("Data loaded successfully.")
@@ -31,20 +34,19 @@ def load_data(engine, query, sql_values):
 
 
 def filter_data(data, filter_by, filter_value):
+    """Filter data based on a column and value.
+    :param data:
+    :param filter_by:
+    :param filter_value:
+    :return:
+    """
     return data[data[filter_by] == filter_value]
 
 
-def load_and_preprocess_data(config, filter_config):
-    data = load_data(config.engine, config.query, config.sql_values)
-    if filter_config.filter_by and filter_config.filter_value:
-        data = filter_data(data, filter_config.filter_by, filter_config.filter_value)
-    preprocessor = Preprocessor()
-    x_column, _y_column, y_bin = preprocessor.preprocess_data(data, config.outputs_dir)
-    x_train, y_train, x_test, y_test = split_data(x_column, y_bin, config.outputs_dir)
-    return data, x_train, y_train, x_test, y_test
-
-
 def create_db_connection():
+    """Create a connection to the database.
+    :return:
+    """
     user = os.environ.get("DB_USER")
     password = os.environ.get("DB_PASSWORD")
     host = os.environ.get("DB_HOST")
@@ -54,15 +56,32 @@ def create_db_connection():
 
 
 def save_preprocessed_data(x_data, outputs_dir):
+    """Save preprocessed data to a CSV file.
+    :param x_data:
+    :param outputs_dir:
+    :return:
+    """
     x_data.to_csv(os.path.join(outputs_dir, "X.csv"), index=False)
 
 
 def save_split_data(x_train, x_test, outputs_dir):
+    """Save the split data to CSV files.
+    :param x_train:
+    :param x_test:
+    :param outputs_dir:
+    :return:
+    """
     x_train.to_csv(os.path.join(outputs_dir, "X_train.csv"), index=False)
     x_test.to_csv(os.path.join(outputs_dir, "X_test.csv"), index=False)
 
 
 def split_data(x_bin, y_bin, outputs_dir):
+    """Split the data into training and test sets.
+    :param x_bin:
+    :param y_bin:
+    :param outputs_dir:
+    :return:
+    """
     x_train, y_train, x_test, y_test = None, None, None, None
     try:
         split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)

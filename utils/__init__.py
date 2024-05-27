@@ -1,6 +1,4 @@
-"""
-This module contains utility functions for the project.
-"""
+"""This module contains utility functions for the project."""
 
 from .notify import (
     NotificationData,
