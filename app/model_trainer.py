@@ -10,10 +10,10 @@ import pandas as pd
 from dotenv import load_dotenv
 
 import db
-from config import model_types, sql_values, model_for_selection, \
+from app.config import model_types, sql_values, model_for_selection, \
     perform_feature_selection, query
 from models.model_manager import ModelManager
-from params import GOOD_HYPERPARAMETERS, DISCORD_WEBHOOK_URL, DISCORD_AVATAR_URL
+from app.params import GOOD_HYPERPARAMETERS, DISCORD_WEBHOOK_URL, DISCORD_AVATAR_URL
 from utils import compare_r2, write_current_r2, send_notification, plot_feature_importance, read_previous_r2, \
     save_importance_profile, load_importance_profile, compare_to_baseline
 from .data_handler import DataHandler

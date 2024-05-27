@@ -3,7 +3,7 @@ import os
 
 import requests
 
-from params import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL
+from app.params import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL
 
 
 def create_message(avg_r2, r2_comparison, total_cases, time_difference, models, model, num_features):
