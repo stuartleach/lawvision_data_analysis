@@ -5,8 +5,11 @@ import os
 
 import matplotlib.pyplot as plt
 import mlflow
+import mlflow.pytorch
+import mlflow.sklearn
 import pandas as pd
 import shap
+import torch
 from joblib import dump, load
 from sklearn.ensemble import (
     AdaBoostRegressor,
@@ -23,8 +26,65 @@ from sklearn.metrics import mean_squared_error, r2_score
 from utils import sanitize_metric_name
 
 
-class ModelManager:
-    """Class to manage the model training, evaluation, and interpretation."""
+class NeuralNetworkModelManager:
+    """Class to manage the neural network model training,
+    evaluation, and interpretation."""
+
+    def __init__(self, model, input_dim=None):
+        self.model = model
+        self.input_dim = input_dim
+
+    def train(self, x_train, y_train):
+        """Train the model using the given training data."""
+        try:
+            self.model.fit(x_train, y_train)
+            logging.info("Neural Network model training completed.")
+        except Exception as e:
+            logging.error("Error training Neural Network model: %s", e)
+            raise
+
+    def evaluate(self, x_test, y_test):
+        """Evaluate the model using the given test data."""
+        try:
+            y_pred = self.model.predict(x_test)
+            mse = mean_squared_error(y_test, y_pred)
+            r2 = r2_score(y_test, y_pred)
+            logging.info("Mean Squared Error: %s", mse)
+            logging.info("R-squared: %s", r2)
+            return mse, r2
+        except Exception as e:
+            logging.error("Error evaluating Neural Network model: %s", e)
+            raise
+
+    def log_metrics(self, mse, r2, _x, _outputs_dir):
+        """Log the metrics and model artifacts."""
+        mlflow.log_metric("mse", mse)
+        mlflow.log_metric("r2", r2)
+        mlflow.pytorch.log_model(self.model, "model")
+
+        logging.info("Model saved.")
+
+    def save_model(self, path):
+        """Save the model to the given path."""
+        try:
+            torch.save(self.model.state_dict(), path)
+            logging.info("Model saved to %s", path)
+        except Exception as e:
+            logging.error("Error saving model: %s", e)
+            raise
+
+    def load_model(self, path):
+        """Load the model from the given path."""
+        try:
+            self.model.load_state_dict(torch.load(path))
+            logging.info("Model loaded from %s", path)
+        except Exception as e:
+            logging.error("Error loading model: %s", e)
+            raise
+
+
+class RegressionModelManager:
+    """Class to manage the regression model training, evaluation, and interpretation."""
 
     MODEL_MAP = {
         "gradient_boosting": GradientBoostingRegressor,
@@ -56,11 +116,7 @@ class ModelManager:
             raise
 
     def train(self, x_train, y_train):
-        """Train the model using the given training data.
-        :param x_train:
-        :param y_train:
-        :return:
-        """
+        """Train the model using the given training data."""
         try:
             self.model.fit(x_train, y_train)
             logging.info("%s model training completed.", self.model_type)
@@ -69,11 +125,7 @@ class ModelManager:
             raise
 
     def evaluate(self, x_test, y_test):
-        """Evaluate the model using the given test data.
-        :param x_test:
-        :param y_test:
-        :return:
-        """
+        """Evaluate the model using the given test data."""
         try:
             y_pred = self.model.predict(x_test)
             mse = mean_squared_error(y_test, y_pred)
@@ -86,13 +138,7 @@ class ModelManager:
             raise
 
     def log_metrics(self, mse, r2, x, outputs_dir):
-        """Log the metrics and model artifacts.
-        :param mse:
-        :param r2:
-        :param x:
-        :param outputs_dir:
-        :return:
-        """
+        """Log the metrics and model artifacts."""
         mlflow.log_metric("mse", mse)
         mlflow.log_metric("r2", r2)
         mlflow.sklearn.log_model(self.model, "model")
@@ -131,12 +177,7 @@ class ModelManager:
         )
 
     def plot_partial_dependence(self, x, features, outputs_dir):
-        """Plot partial dependence for the given features.
-        :param x:
-        :param features:
-        :param outputs_dir:
-        :return:
-        """
+        """Plot partial dependence for the given features."""
         _, ax = plt.subplots(figsize=(12, 8))
         PartialDependenceDisplay.from_estimator(self.model, x, features=features).plot(
             ax=ax
@@ -147,10 +188,7 @@ class ModelManager:
         plt.show()
 
     def save_model(self, path):
-        """Save the model to the given path.
-        :param path:
-        :return:
-        """
+        """Save the model to the given path."""
         try:
             dump(self.model, path)
             logging.info("Model saved to %s", path)
@@ -159,13 +197,46 @@ class ModelManager:
             raise
 
     def load_model(self, path):
-        """Load the model from the given path.
-        :param path:
-        :return:
-        """
+        """Load the model from the given path."""
         try:
             self.model = load(path)
             logging.info("Model loaded from %s", path)
         except Exception as e:
             logging.error("Error loading model: %s", e)
             raise
+
+
+class ModelManager:
+    """Unified class to manage both regression and neural network models."""
+
+    def __init__(self, model_type, good_hyperparameters, nn_model=None):
+        self.model_type = model_type
+        self.nn_model = nn_model
+        self.input_dim = nn_model.input_dim if nn_model else None
+        self.good_hyperparameters = good_hyperparameters
+        self.manager = self._initialize_manager()
+
+    def _initialize_manager(self):
+        if self.nn_model:
+            return NeuralNetworkModelManager(self.nn_model, self.input_dim)
+        return RegressionModelManager(
+            self.model_type, self.good_hyperparameters, self.input_dim
+        )
+
+    def train(self, x_train, y_train):
+        self.manager.train(x_train, y_train)
+
+    def evaluate(self, x_test, y_test):
+        return self.manager.evaluate(x_test, y_test)
+
+    def log_metrics(self, mse, r2, x, outputs_dir):
+        self.manager.log_metrics(mse, r2, x, outputs_dir)
+
+    def plot_partial_dependence(self, x, features, outputs_dir):
+        self.manager.plot_partial_dependence(x, features, outputs_dir)
+
+    def save_model(self, path):
+        self.manager.save_model(path)
+
+    def load_model(self, path):
+        self.manager.load_model(path)

@@ -1,35 +1,71 @@
 """Configuration file for the model training pipeline."""
 
+from dataclasses import dataclass
+from typing import List
+
 from utils import get_query
 
-# Model configuration
-# model_types = ["gradient_boosting", "random_forest", "hist_gradient_boosting",
-#           "ada_boost", "bagging", "extra_trees", "lasso", "ridge", "neural_network"]
-model_types = ["random_forest"]  # Model types to use for training
-TUNE_HYPERPARAMETERS_FLAG = False  # Set to True to tune hyperparameters, False to skip
-PERFORM_FEATURE_SELECTION_FLAG = (
-    False  # Set to True to perform feature selection, False to skip
-)
-MODEL_FOR_SELECTION = "random_forest"  # Model to use for feature selection
 
-# Data selection parameters
-CASE_LIMIT = 10000000
-JUDGE_NAMES = []
-COUNTY_NAMES = []
-sql_values = {
-    "limit": CASE_LIMIT,
-    "judge_names": JUDGE_NAMES,
-    "county_names": COUNTY_NAMES,
-}
+@dataclass
+class SQLValues:
+    """Data class for SQL values.
+
+    :param limit:
+    :param judge_names:
+    :param county_names:
+    """
+
+    limit: int
+    judge_names: List[str]
+    county_names: List[str]
+
+
+sql_values = SQLValues(
+    limit=1000000,
+    judge_names=[],
+    county_names=[],
+)
+
+
+@dataclass
+class ModelConfig:
+    """Data class for model configuration.
+
+    :param model_types:
+    :param model_for_selection:
+    :param perform_feature_selection:
+    :param tune_hyperparameters:
+    :param sql_values:
+    """
+
+    model_types: List[str]
+    model_for_selection: str
+    perform_feature_selection: bool
+    tune_hyperparameters: bool
+    sql_values: SQLValues
+
+
+model_config = ModelConfig(
+    model_types=["random_forest", "gradient_boosting"],
+    model_for_selection="random_forest",
+    perform_feature_selection=False,
+    tune_hyperparameters=False,
+    sql_values=sql_values,
+)
+
 
 # Generate SQL conditions for judges and counties
 JUDGE_NAMES_CONDITION = ""
-if JUDGE_NAMES:
-    JUDGE_NAMES_LIST = ", ".join([f"'{name}'" for name in JUDGE_NAMES])
+if model_config.sql_values.judge_names:
+    JUDGE_NAMES_LIST = ", ".join(
+        [f"'{name}'" for name in model_config.sql_values.judge_names]
+    )
     JUDGE_NAMES_CONDITION = f"AND j.judge_name IN ({JUDGE_NAMES_LIST})"
 COUNTY_NAMES_CONDITION = ""
-if COUNTY_NAMES:
-    COUNTY_NAMES_LIST = ", ".join([f"'{name}'" for name in COUNTY_NAMES])
+if model_config.sql_values.county_names:
+    COUNTY_NAMES_LIST = ", ".join(
+        [f"'{name}'" for name in model_config.sql_values.county_names]
+    )
     COUNTY_NAMES_CONDITION = f"AND co.county_name IN ({COUNTY_NAMES_LIST})"
 
 # SQL query template
@@ -76,4 +112,4 @@ LIMIT %(limit)s;
 """
 
 # Generate the final SQL query
-query = get_query(sql_values, query_template)
+query = get_query(model_config.sql_values, query_template)
