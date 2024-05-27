@@ -1,10 +1,16 @@
 import logging
-import os
 
 import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.preprocessing import LabelEncoder, StandardScaler
+
+
+def convert_bail_amount(data):
+    data['first_bail_set_cash'] = pd.to_numeric(data['first_bail_set_cash'], errors='coerce')
+    data.rename(columns={'first_bail_set_cash': 'bail_amount'}, inplace=True)
+    logging.info(f"First few rows of data: {data.head()}")
+    return data
 
 
 class Preprocessor:
@@ -18,33 +24,15 @@ class Preprocessor:
         self.scaler = StandardScaler()
 
     def preprocess_data(self, data, outputs_dir):
-        data = self._convert_bail_amount(data)
+        data = convert_bail_amount(data)
         self._create_bins(data)
         data = self._drop_list_columns(data)
         data = self._encode_categorical_features(data)
         x, y, y_bin = self._separate_features_and_target(data)
         x, y, y_bin = self._handle_missing_values(x, y, y_bin)
         x = self._normalize_columns(x)
-        self._save_preprocessed_data(x, outputs_dir)
+        data.save_preprocessed_data(x, outputs_dir)
         return x, y, y_bin
-
-    def split_data(self, x, y_bin, outputs_dir):
-        split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
-        for train_index, test_index in split.split(x, y_bin):
-            x_train = x.loc[train_index]
-            y_train = y_bin.loc[train_index]
-            x_test = x.loc[test_index]
-            y_test = y_bin.loc[test_index]
-        logging.info("Data split into training and test sets (stratified).")
-        self._save_split_data(x_train, x_test, outputs_dir)
-        return x_train, y_train, x_test, y_test
-
-    @staticmethod
-    def _convert_bail_amount(data):
-        data['first_bail_set_cash'] = pd.to_numeric(data['first_bail_set_cash'], errors='coerce')
-        data.rename(columns={'first_bail_set_cash': 'bail_amount'}, inplace=True)
-        logging.info(f"First few rows of data: {data.head()}")
-        return data
 
     def _create_bins(self, data):
         data['bail_amount_bin'] = pd.cut(data['bail_amount'], bins=self.num_bins, labels=False)
@@ -79,7 +67,8 @@ class Preprocessor:
             logging.info("Categorical features encoded with One-Hot Encoding.")
         return data
 
-    def _separate_features_and_target(self, data):
+    @staticmethod
+    def _separate_features_and_target(data):
         x = data.drop(columns=['bail_amount', 'bail_amount_bin'])
         y = data['bail_amount']
         y_bin = data['bail_amount_bin']
@@ -103,12 +92,3 @@ class Preprocessor:
                 x[column] = self.scaler.fit_transform(x[[column]])
                 logging.info(f"Normalized {column} column.")
         return x
-
-    @staticmethod
-    def _save_preprocessed_data(x, outputs_dir):
-        x.to_csv(os.path.join(outputs_dir, 'X.csv'), index=False)
-
-    @staticmethod
-    def _save_split_data(x_train, x_test, outputs_dir):
-        x_train.to_csv(os.path.join(outputs_dir, 'X_train.csv'), index=False)
-        x_test.to_csv(os.path.join(outputs_dir, 'X_test.csv'), index=False)

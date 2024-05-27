@@ -1,4 +1,4 @@
-from utils import QueryUtils
+from utils import get_query
 
 # Model configuration
 # model_types = ["gradient_boosting", "random_forest", "hist_gradient_boosting", "ada_boost", "bagging", "extra_trees",
@@ -73,4 +73,4 @@ LIMIT %(limit)s;
 """
 
 # Generate the final SQL query
-query = QueryUtils.get_query(sql_values, query_template)
+query = get_query(sql_values, query_template)
