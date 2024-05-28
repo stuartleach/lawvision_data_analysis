@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-from db import save_preprocessed_data
+from app.data_loader import save_preprocessed_data
 
 
 def convert_bail_amount(data):

@@ -38,7 +38,7 @@ target-version = "py38"
 
 [tool.ruff.lint]
 # Enable specific rules and disable others.
-select = ["E4", "E7", "E9", "F", "W", "N", "PL", "C", "E", "FIX", "LOG", "I", "UP", "Q", "G"]
+select = ["E4", "E7", "E9", "F", "W"]
 ignore = []
 
 # Allow fixing for all enabled rules.

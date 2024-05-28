@@ -2,20 +2,22 @@
 
 import logging
 
-from models import ModelTrainer
-from models.model_trainer import ModelFilter
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+from app.train import ModelFilter, ModelTrainer
 
 
 def run():
-    """This method runs the application.
-    :return:
-    """
-
-    model_filter = ModelFilter(
-        filter_type="",
-        filter_value="",
-    )
-
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+    """This method runs the application."""
+    logging.info("Running the application...")
+    # model_filter = ModelFilter(filter_type="county_name", filter_value="Kings")
+    model_filter = ModelFilter(filter_type="", filter_value="")
     ModelTrainer(model_filter).run()
+
+
+def main():
+    run()
+
+
+if __name__ == "__main__":
+    main()
+

@@ -10,31 +10,6 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 
 
-def get_query(sql_values_to_interpolate, q_template):
-    """Generate the final SQL query.
-
-    :param sql_values_to_interpolate:
-    :param q_template:
-    :return:
-    """
-    judge_names_condition = (
-        "AND j.judge_name = ANY(%(judge_names)s)"
-        if sql_values_to_interpolate.judge_names
-        else ""
-    )
-    county_names_condition = (
-        "AND co.county_name = ANY(%(county_names)s)"
-        if sql_values_to_interpolate.county_names
-        else ""
-    )
-
-    resulting_query = q_template.format(
-        judge_names_condition=judge_names_condition,
-        county_names_condition=county_names_condition,
-    )
-    return resulting_query
-
-
 def sanitize_metric_name(name):
     """Sanitize the metric name.
 
@@ -124,7 +99,7 @@ def compare_to_baseline(importance_df, baseline_df):
         baseline_df, on="Feature", suffixes=("_judge", "_baseline")
     )
     comparison["Difference"] = (
-        comparison["Importance_judge"] - comparison["Importance_baseline"]
+            comparison["Importance_judge"] - comparison["Importance_baseline"]
     )
     logging.info("Comparison to baseline profile completed")
     return comparison
