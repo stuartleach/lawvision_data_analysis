@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.config import model_config
 from app.data_loader import create_db_connection, load_data, split_data
 from app.env import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL
-from app.model_manager import ModelManager
+from app.models import ModelManager
 from app.notify import send_notification, NotificationData
 from app.params import GOOD_HYPERPARAMETERS
 from app.preprocessor import Preprocessor

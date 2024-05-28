@@ -2,7 +2,7 @@
 
 import logging
 
-from app.model_trainer import ModelFilter, ModelTrainer
+from app.train import ModelFilter, ModelTrainer
 
 
 def run():

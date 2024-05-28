@@ -5,7 +5,6 @@ import os
 
 import matplotlib.pyplot as plt
 import mlflow
-import mlflow.pytorch
 import mlflow.sklearn
 import pandas as pd
 from joblib import dump, load

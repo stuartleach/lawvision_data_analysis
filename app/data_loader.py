@@ -41,6 +41,7 @@ def run_migrations():
 def load_data(session: Session, sql_values: SQLValues):
     logging.info("Loading data from database...")
     bail_threshold = 800000
+
     stmt = (
         select(
             Case.gender,
