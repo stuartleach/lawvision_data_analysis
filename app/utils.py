@@ -124,7 +124,7 @@ def compare_to_baseline(importance_df, baseline_df):
         baseline_df, on="Feature", suffixes=("_judge", "_baseline")
     )
     comparison["Difference"] = (
-        comparison["Importance_judge"] - comparison["Importance_baseline"]
+            comparison["Importance_judge"] - comparison["Importance_baseline"]
     )
     logging.info("Comparison to baseline profile completed")
     return comparison
