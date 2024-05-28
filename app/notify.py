@@ -2,24 +2,11 @@
 
 import logging
 import os
-from dataclasses import dataclass
 from typing import Optional
 
 import requests
 
-
-@dataclass
-class NotificationData:
-    """Data class for notification data.
-
-    :param performance_data:
-    :param plot_file_path:
-    :param model_info:
-    """
-
-    performance_data: dict
-    plot_file_path: str
-    model_info: dict
+from app.classes import NotificationData
 
 
 def create_message(data: NotificationData) -> str:

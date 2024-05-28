@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-from dataclasses import dataclass
 
 import mlflow
 import mlflow.sklearn
@@ -9,13 +8,13 @@ import pandas as pd
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session, sessionmaker
 
-from .config import model_config
-from .data_loader import create_db_connection, load_data, split_data
+from .classes import TrainerConfig, model_config
 from .env import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL
-from .models import ModelManager
+from .env import GOOD_HYPERPARAMETERS
+from .load import create_db_connection, load_data, split_data
+from .model import ModelManager
 from .notify import send_notification, NotificationData
-from .params import GOOD_HYPERPARAMETERS
-from .preprocessor import Preprocessor
+from .preprocess import Preprocessor
 from .utils import (
     PlotParams,
     compare_r2,
@@ -32,38 +31,17 @@ load_dotenv()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=create_db_connection())
 
 
-@dataclass
-class ModelFilter:
-    """Data class for model filter."""
-    filter_type: str = ""
-    filter_value: str = ""
-
-
-@dataclass
-class TrainerConfig:
-    """Data class for trainer configuration."""
-    outputs_dir: str = "_outputs"
-    webhook_url: str = DISCORD_WEBHOOK_URL
-    avatar_url: str = DISCORD_AVATAR_URL
-    baseline_profile_name: str = "baseline"
-    start_time: float = time.time()
-    previous_r2_file: str = os.path.join("_outputs", "previous_r2.txt")
-
-
 class ModelTrainer:
     """Model trainer class."""
 
-    def __init__(self, model_filter=ModelFilter()):
+    def __init__(self):
         self.config = TrainerConfig()
         self.session = SessionLocal()
-        self.filter_type = model_filter.filter_type
-        self.filter_value = model_filter.filter_value
         self.engine = create_db_connection()
         self.total_cases = 0
         self.num_features = 0
         self.ensure_outputs_dir()
-        logging.info(
-            f"Initialized ModelTrainer with filter_type: {self.filter_type}, filter_value: {self.filter_value}")
+        logging.info("Initialized ModelTrainer")
 
     def ensure_outputs_dir(self):
         """Ensure that the _outputs directory exists."""
@@ -98,28 +76,14 @@ class ModelTrainer:
 
     def run(self):
         """Run the model training process."""
-        logging.info(f"Running model training with filter type: {self.filter_type}")
-
-        # Check if filter_type is blank and handle accordingly
-        if self.filter_type:
-            filter_values = self.get_unique_values(self.filter_type)
-            logging.info(f"Unique values for filter type {self.filter_type}: {filter_values}")
-
-            for value in filter_values:
-                self.train_model_for_filter(value)
-        else:
-            self.train_model_for_filter(None)  # No filter
+        self.train_model()
 
     def get_unique_values(self, column):
         """Get unique values for a column in the dataset."""
 
         logging.info(f"Getting unique values for column: {column}")
-        # session = Session(self.engine)
 
-        # model_config.sql_values = model_config.sql_values if model_config.sql_values else {}
-
-        params = model_config.sql_values
-        data = load_data(self.session, params)
+        data = load_data(self.session)
         print(data.columns.tolist())
         logging.info(f"Loaded data columns: {data.columns}")
         # print(data.head().values.tolist())
@@ -128,11 +92,9 @@ class ModelTrainer:
             raise KeyError(f"Column '{column}' not found in data.")
         return data[column].unique()
 
-    def train_model_for_filter(self, filter_value):
-        """Train model for a specific filter value."""
-        logging.info(f"Training model for {self.filter_type}: {filter_value if filter_value is not None else 'No Filter'}")
-
-        preprocessor = Preprocessing(self.config, self.filter_type, filter_value)
+    def train_model(self):
+        """Train model"""
+        preprocessor = Preprocessing(self.config)
         _, x_train, y_train, x_test, y_test = preprocessor.load_and_preprocess_data()
         self.total_cases = preprocessor.total_cases
         self.num_features = preprocessor.num_features
@@ -142,7 +104,8 @@ class ModelTrainer:
 
         mlflow.set_experiment("LawVision Model Training")
 
-        with mlflow.start_run(run_name=f"Model Training Run - {self.filter_type} - {filter_value if filter_value is not None else 'No Filter'}"):
+        with mlflow.start_run(
+                run_name="Model Training Run"):
             for model_type in model_config.model_types:
                 with mlflow.start_run(nested=True, run_name=model_type):
                     mlflow.log_param("model_type", model_type)
@@ -204,26 +167,21 @@ class ModelTrainer:
             )
 
             send_notification(notification_data, DISCORD_WEBHOOK_URL, DISCORD_AVATAR_URL)
-            logging.info(f"Model training completed for {filter_value or 'No Filter'}.")
+            logging.info("Model training completed.")
 
 
 class Preprocessing:
-    def __init__(self, config, filter_by=None, filter_value=None):
+    def __init__(self, config):
         self.config = config
-        self.filter_by = filter_by
-        self.filter_value = filter_value
         self.total_cases = 0
         self.num_features = 0
         self.engine = create_db_connection()
 
     def load_and_preprocess_data(self):
         """Load and preprocess data."""
-        sql_values_copy = model_config.sql_values.to_dict()
-        if self.filter_by and self.filter_value:
-            sql_values_copy[self.filter_by] = [self.filter_value]
 
         session = Session(self.engine)
-        data = load_data(session, sql_values_copy)
+        data = load_data(session)
         x_column, _y_column, y_bin = Preprocessor().preprocess_data(data, self.config.outputs_dir)
         x_train, y_train, x_test, y_test = split_data(x_column, y_bin, self.config.outputs_dir)
         self.total_cases = len(data)
