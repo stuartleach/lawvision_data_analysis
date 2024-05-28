@@ -10,9 +10,6 @@ from sqlalchemy.orm import Session
 
 from .env import BASE_QUERY, QUERY_LIMIT
 
-# Load the Alembic configuration
-alembic_cfg = Config("alembic.ini")
-
 
 def create_engine_connection(user: str, password: str, host: str, port: str, dbname: str) -> Engine:
     """
@@ -33,6 +30,8 @@ def run_migrations():
     """
     Run Alembic migrations.
     """
+    # Load the Alembic configuration
+    alembic_cfg = Config("alembic.ini")
     command.upgrade(alembic_cfg, "head")
 
 

@@ -23,7 +23,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 from app.utils import sanitize_metric_name
 
 
-class RegressionModelManager:
+class RegressionModeler:
     """Class to manage the regression model training, evaluation, and interpretation."""
 
     MODEL_MAP = {
@@ -129,7 +129,7 @@ class RegressionModelManager:
             raise
 
 
-class ModelManager:
+class Modeler:
     """Unified class to manage both regression and neural network models."""
 
     def __init__(self, model_type, good_hyperparameters):
@@ -138,7 +138,7 @@ class ModelManager:
         self.manager = self._initialize_manager()
 
     def _initialize_manager(self):
-        return RegressionModelManager(
+        return RegressionModeler(
             self.model_type, self.good_hyperparameters
         )
 

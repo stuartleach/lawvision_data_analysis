@@ -12,7 +12,7 @@ from .classes import TrainerConfig, model_config
 from .env import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL
 from .env import GOOD_HYPERPARAMETERS
 from .load import create_db_connection, load_data, split_data
-from .model import ModelManager
+from .model import Modeler
 from .notify import send_notification, NotificationData
 from .preprocess import Preprocessor
 from .utils import (
@@ -26,17 +26,14 @@ from .utils import (
     write_current_r2,
 )
 
-load_dotenv()
-
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=create_db_connection())
-
 
 class ModelTrainer:
     """Model trainer class."""
+    load_dotenv()
 
     def __init__(self):
         self.config = TrainerConfig()
-        self.session = SessionLocal()
+        self.session = sessionmaker(autocommit=False, autoflush=False, bind=create_db_connection())
         self.engine = create_db_connection()
         self.total_cases = 0
         self.num_features = 0
@@ -44,7 +41,7 @@ class ModelTrainer:
         logging.info("Initialized ModelTrainer")
 
     def ensure_outputs_dir(self):
-        """Ensure that the _outputs directory exists."""
+        """Ensure that the outputs directory exists."""
         if not os.path.exists(self.config.outputs_dir):
             os.makedirs(self.config.outputs_dir)
 
@@ -105,26 +102,26 @@ class ModelTrainer:
         mlflow.set_experiment("LawVision Model Training")
 
         with mlflow.start_run(
-                run_name="Model Training Run"):
+                run_name="Baseline Model Training Run"):
             for model_type in model_config.model_types:
                 with mlflow.start_run(nested=True, run_name=model_type):
                     mlflow.log_param("model_type", model_type)
 
-                    model_manager = ModelManager(model_type=model_type, good_hyperparameters=GOOD_HYPERPARAMETERS)
+                    modeler = Modeler(model_type=model_type, good_hyperparameters=GOOD_HYPERPARAMETERS)
 
                     x_train_selected, x_test_selected = x_train, x_test
 
-                    model_manager.train(x_train_selected, y_train)
+                    modeler.train(x_train_selected, y_train)
 
-                    mse, r2 = model_manager.evaluate(x_test_selected, y_test)
+                    mse, r2 = modeler.evaluate(x_test_selected, y_test)
                     model_r2_scores.append(r2)
-                    model_manager.log_metrics(mse, r2, pd.DataFrame(x_train_selected, columns=x_train.columns),
-                                              self.config.outputs_dir)
+                    modeler.log_metrics(mse, r2, pd.DataFrame(x_train_selected, columns=x_train.columns),
+                                        self.config.outputs_dir)
 
                     # Plot Partial Dependence
-                    model_manager.plot_partial_dependence(pd.DataFrame(x_test_selected, columns=x_train.columns),
-                                                          features=x_train.columns.tolist(),
-                                                          outputs_dir=self.config.outputs_dir)
+                    modeler.plot_partial_dependence(pd.DataFrame(x_test_selected, columns=x_train.columns),
+                                                    features=x_train.columns.tolist(),
+                                                    outputs_dir=self.config.outputs_dir)
 
                     mlflow.log_metric("mse", mse)
                     mlflow.log_metric("r2", r2)
@@ -146,7 +143,7 @@ class ModelTrainer:
                 model_info={"model_types": model_config.model_types, "num_features": self.num_features},
             )
 
-            plot_file_path = self.plot_and_save_importance(model_manager.manager.model, plot_params)
+            plot_file_path = self.plot_and_save_importance(modeler.manager.model, plot_params)
 
             performance_data = {
                 "average_r2": average_r2,

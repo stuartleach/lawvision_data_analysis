@@ -1,13 +1,13 @@
 /_mlruns/**
 /.venv/**
-/_outputs/**
-/_outputs
+/outputs/**
+/outputs
 /__pycache__/*
 /__pycache__/
 __pycache__/
 /_mlruns
 .env
-/_outputs/
+/outputs/
 /_mlruns/
 /_old/
 /_old/**
@@ -15,7 +15,7 @@ __pycache__/
 _mlruns
 _old
 __pycache__
-_outputs
+outputs
 _mlruns/
 _old/
 alembic.ini

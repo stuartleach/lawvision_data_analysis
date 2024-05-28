@@ -80,12 +80,12 @@ class NotificationData:
 @dataclass
 class TrainerConfig:
     """Data class for trainer configuration."""
-    outputs_dir: str = "_outputs"
+    outputs_dir: str = "outputs"
     webhook_url: str = DISCORD_WEBHOOK_URL
     avatar_url: str = DISCORD_AVATAR_URL
     baseline_profile_name: str = "baseline"
     start_time: float = time.time()
-    previous_r2_file: str = os.path.join("_outputs", "previous_r2.txt")
+    previous_r2_file: str = os.path.join("outputs", "previous_r2.txt")
 
 
 @dataclass
