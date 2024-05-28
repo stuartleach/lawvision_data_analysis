@@ -5,7 +5,7 @@ from typing import List
 @dataclass
 class SQLValues:
     """Dataclass for SQL query parameters."""
-    limit: int = 1000000
+    limit: int = 10000000
     judge_names: List[str] = field(default_factory=list)
     county_names: List[str] = field(default_factory=list)
 

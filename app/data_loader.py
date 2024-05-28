@@ -74,13 +74,13 @@ def load_data(session: Session, sql_values: SQLValues):
         )
     )
 
-    if sql_values.judge_names:
+    if sql_values["judge_names"]:
         stmt = stmt.where(Judge.judge_name.in_(sql_values.judge_names))
 
-    if sql_values.county_names:
+    if sql_values["county_names"]:
         stmt = stmt.where(County.county_name.in_(sql_values.county_names))
 
-    stmt = stmt.limit(sql_values.limit)
+    stmt = stmt.limit(sql_values["limit"])
 
     results = session.execute(stmt).all()
     logging.info("Data loaded successfully.")
