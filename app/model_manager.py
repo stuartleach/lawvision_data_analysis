@@ -8,7 +8,6 @@ import mlflow
 import mlflow.pytorch
 import mlflow.sklearn
 import pandas as pd
-import shap
 from joblib import dump, load
 from sklearn.ensemble import (
     AdaBoostRegressor,
@@ -22,7 +21,7 @@ from sklearn.inspection import PartialDependenceDisplay
 from sklearn.linear_model import Lasso, Ridge
 from sklearn.metrics import mean_squared_error, r2_score
 
-from utils import sanitize_metric_name
+from app.utils import sanitize_metric_name
 
 
 class RegressionModelManager:
@@ -83,11 +82,7 @@ class RegressionModelManager:
         mlflow.log_metric("mse", mse)
         mlflow.log_metric("r2", r2)
         mlflow.sklearn.log_model(self.model, "model")
-
-        if hasattr(self.model, "feature_importances_"):
-            self._log_feature_importances(x, outputs_dir)
-        else:
-            self._log_shap_values(x, outputs_dir)
+        self._log_feature_importances(x, outputs_dir)
 
     def _log_feature_importances(self, x, outputs_dir):
         importance = pd.Series(self.model.feature_importances_, index=x.columns)
@@ -104,18 +99,6 @@ class RegressionModelManager:
             mlflow.log_metric(sanitized_feature_name, importance_value)
 
         logging.info("Feature importances: \n%s", importance)
-
-    def _log_shap_values(self, x, outputs_dir):
-        explainer = shap.Explainer(self.model, x)
-        shap_values = explainer(x)
-        shap.summary_plot(shap_values, x, show=False)
-        shap_file_path = os.path.join(outputs_dir, "shap_summary.png")
-        plt.savefig(shap_file_path)
-        mlflow.log_artifact(shap_file_path)
-        logging.info("SHAP summary plot saved as '%s'", shap_file_path)
-        logging.info(
-            "Model does not support feature importances, used SHAP for interpretation."
-        )
 
     def plot_partial_dependence(self, x, features, outputs_dir):
         """Plot partial dependence for the given features."""
