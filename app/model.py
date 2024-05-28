@@ -129,7 +129,7 @@ class RegressionModeler:
             raise
 
 
-class Modeler:
+class Model:
     """Unified class to manage both regression and neural network models."""
 
     def __init__(self, model_type, good_hyperparameters):

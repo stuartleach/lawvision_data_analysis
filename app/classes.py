@@ -50,14 +50,12 @@ class ModelConfig:
     """
 
     model_types: List[str]
-    model_for_selection: str
     tune_hyperparameters: bool
     query_params: QueryParams
 
 
 model_config = ModelConfig(
     model_types=["random_forest", "gradient_boosting"],
-    model_for_selection="random_forest",
     tune_hyperparameters=False,
     query_params=query_params,
 )

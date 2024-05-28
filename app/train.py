@@ -6,13 +6,13 @@ import mlflow
 import mlflow.sklearn
 import pandas as pd
 from dotenv import load_dotenv
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session
 
 from .classes import TrainerConfig, model_config
 from .env import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL
 from .env import GOOD_HYPERPARAMETERS
 from .load import create_db_connection, load_data, split_data
-from .model import Modeler
+from .model import Model
 from .notify import send_notification, NotificationData
 from .preprocess import Preprocessor
 from .utils import (
@@ -33,7 +33,7 @@ class ModelTrainer:
 
     def __init__(self):
         self.config = TrainerConfig()
-        self.session = sessionmaker(autocommit=False, autoflush=False, bind=create_db_connection())
+        self.session = Session(autocommit=False, autoflush=False, bind=create_db_connection())
         self.engine = create_db_connection()
         self.total_cases = 0
         self.num_features = 0
@@ -107,7 +107,7 @@ class ModelTrainer:
                 with mlflow.start_run(nested=True, run_name=model_type):
                     mlflow.log_param("model_type", model_type)
 
-                    modeler = Modeler(model_type=model_type, good_hyperparameters=GOOD_HYPERPARAMETERS)
+                    modeler = Model(model_type=model_type, good_hyperparameters=GOOD_HYPERPARAMETERS)
 
                     x_train_selected, x_test_selected = x_train, x_test
 
