@@ -1,7 +1,8 @@
 """This is the main file that runs the application."""
 
-# Law Vision Data Analysis trains an AI model to understand which what factors play into judges' decisions when
-# setting bail amounts.
+#     Law Vision Data Analysis trains an AI model to understand which what factors play into judges' decisions when
+#     setting bail amounts.
+#
 #     Copyright (C) 2024 J. Stuart Leach, Jr.
 #
 #     This program is free software: you can redistribute it and/or modify
