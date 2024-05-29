@@ -3,6 +3,20 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Actions Status](https://github.com/stuartleach/lawvision_data_analysis/workflows/Ruff-Lint/badge.svg)](https://github.com/stuartleach/lawvision_data_analysis/actions) 
 
+## Table of Contents
+1. [Overview](#overview)
+2. [Project Purpose](#project-purpose)
+3. [Dataset](#dataset)
+4. [Methodology](#methodology)
+5. [Research Questions](#research-questions)
+6. [Disclaimer](#disclaimer)
+
+## Setup
+1. [How to run](#how-to-run)
+2. TBD
+
+_________
+
 ## Overview
 
 **Bail** is the fee a defendant can pay to be released from custody pending trial. The purpose of bail is to ensure that the defendant appears in court for their trial. If the defendant fails to appear in court, the bail is forfeited. Otherwise, the defendant recoups the expense.
@@ -35,3 +49,11 @@ The purpose of this project is to understand how closely judges in New York Stat
 ## Disclaimer
 
 **This is not and will never be** a tool to be used by counsel. It can't teach a lawyer what to emphasize on their client's behalf. This model will never be as effective as a reasonably perceptive defense attorney. This project is only to understand the extent that judges in New York State abide by the rules laid out in CPL 510.10.
+
+_________
+
+## Setup
+
+### How to run.
+
+1. Clone the repository.
