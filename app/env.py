@@ -1,7 +1,6 @@
 """This file contains the parameters used in the application."""
 
 import os
-from typing import List
 
 from dotenv import load_dotenv
 from sqlalchemy import select, cast, Numeric, Select
