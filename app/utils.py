@@ -116,12 +116,15 @@ class PlotParams:
     model_info: dict
 
 
-def plot_feature_importance(importance_df, outputs_dir, plot_params: PlotParams):
+def plot_feature_importance(importance_df, outputs_dir, plot_params: PlotParams, judge_filter: str = None,
+                            county_filter: str = None):
     """Plot the feature importance.
 
     :param importance_df:
     :param outputs_dir:
     :param plot_params:
+    :param judge_filter:
+    :param county_filter:
     :return:
     """
     model_types = plot_params.model_info["model_types"]
@@ -132,7 +135,15 @@ def plot_feature_importance(importance_df, outputs_dir, plot_params: PlotParams)
     ax = sns.barplot(
         x="Importance", y="Feature", data=importance_df.head(20), palette="viridis", hue="Feature", legend=False
     )
-    plt.title("Top 10 Features That Impact Bail Amount", fontsize=30)
+    if judge_filter:
+        plt.title(f"Top 10 Features That Impact Bail Amount for {judge_filter}", fontsize=30)
+
+    elif county_filter:
+        plt.title(f"Top 10 Features That Impact Bail Amount in {county_filter} County", fontsize=30)
+
+    else:
+        plt.title("Top 10 Features That Impact Bail Amount", fontsize=30)
+
     ax.set_xticklabels(ax.get_xticklabels(), fontsize=18, weight="bold")
     ax.set_yticklabels(ax.get_yticklabels(), fontsize=18, weight="bold")
     plt.xlabel("Importance", fontsize=20)
