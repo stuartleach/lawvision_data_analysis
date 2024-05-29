@@ -1,3 +1,5 @@
+"""This file contains the parameters used in the application."""
+
 import os
 
 from dotenv import load_dotenv
@@ -9,8 +11,6 @@ load_dotenv()
 
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 DISCORD_AVATAR_URL = os.environ.get("DISCORD_AVATAR_URL")
-
-"""This file contains the parameters used in the application."""
 
 HYPERPARAMETER_GRIDS = {
     "gradient_boosting": {
