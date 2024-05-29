@@ -8,12 +8,41 @@ from sqlalchemy import (
     Integer,
     Numeric,
     Text,
-    UniqueConstraint,
+    UniqueConstraint, JSON, Enum,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
+
+
+class Result(Base):
+    __tablename__ = "results"
+    __table_args__ = {"schema": "pretrial"}
+    result_uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    model_target_type = Enum("county_name", "judge_name", "baseline", nullable=False)
+    model_target = Column(Text)
+    model_type = Column(Text, nullable=False)
+    model_params = Column(JSON)
+    average_bail_amount = Column(Numeric)
+    r_squared = Column(Numeric)
+    mean_squared_error = Column(Numeric)
+    gender_importance = Column(Numeric),
+    ethnicity_importance = Column(Numeric),
+    race_importance = Column(Numeric),
+    age_at_arrest_importance = Column(Numeric),
+    known_days_in_custody_importance = Column(Numeric),
+    top_charge_at_arraign_importance = Column(Numeric),
+    first_bail_set_cash_importance = Column(Numeric),
+    prior_vfo_cnt_importance = Column(Numeric),
+    prior_nonvfo_cnt_importance = Column(Numeric),
+    prior_misd_cnt_importance = Column(Numeric),
+    pend_nonvfo_importance = Column(Numeric),
+    pend_misd_importance = Column(Numeric),
+    pend_vfo_importance = Column(Numeric),
+    county_name_importance = Column(Numeric),
+    judge_name_importance = Column(Numeric),
+    median_household_income_importance = Column(Numeric)
 
 
 class Judge(Base):
