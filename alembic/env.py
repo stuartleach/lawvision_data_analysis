@@ -3,9 +3,11 @@ import sys
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool, create_engine
+from sqlalchemy.ext.automap import automap_base
 
-from app.db_types import Base
+# from app.db_types import Base
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -19,13 +21,24 @@ fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-target_metadata = Base.metadata
 
+
+# add your model's MetaData object here
+# for 'autogenerate' support
+# from myapp import mymodel
+# target_metadata = Base.metadata
+Base = automap_base()
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
+load_dotenv()
+
+engine = create_engine(os.environ.get("DATABASE_URL"))
+Base.prepare(engine, reflect=True)
+target_metadata = Base.metadata
 
 
 def run_migrations_offline():
@@ -42,7 +55,7 @@ def run_migrations_offline():
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        # dialect_opts={"paramstyle": "named"},
     )
 
     with context.begin_transaction():
@@ -59,6 +72,8 @@ def run_migrations_online():
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+
+    # create if not exists
 
     with connectable.connect() as connection:
         context.configure(connection=connection, target_metadata=target_metadata)

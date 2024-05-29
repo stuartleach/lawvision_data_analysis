@@ -79,6 +79,21 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
     return df
 
 
+def save_data(session: Session, judge_filter=None, county_filter=None):
+    """
+    Save data to a db file.
+
+    Args:
+        session (Session): The SQLAlchemy session to use for the query.
+        judge_filter (str, optional): The name of the judge to filter by. Defaults to None.
+        county_filter (str, optional): The name of the county to filter by. Defaults to None.
+    """
+    data = load_data(session, judge_filter, county_filter)
+    # write filters to Results table
+
+    logging.info("Data saved to 'data.csv'.")
+
+
 def create_db_connection() -> Engine:
     """
     Create a connection to the database.

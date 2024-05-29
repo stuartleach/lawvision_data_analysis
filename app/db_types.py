@@ -1,3 +1,4 @@
+import time
 import uuid
 
 from sqlalchemy import (
@@ -8,7 +9,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     Text,
-    UniqueConstraint, JSON, Enum,
+    UniqueConstraint, JSON, Enum, Time,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base
@@ -21,28 +22,30 @@ class Result(Base):
     __table_args__ = {"schema": "pretrial"}
     result_uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     model_target_type = Enum("county_name", "judge_name", "baseline", nullable=False)
-    model_target = Column(Text)
+    model_target = Column(Text, default="baseline", nullable=False)
     model_type = Column(Text, nullable=False)
     model_params = Column(JSON)
     average_bail_amount = Column(Numeric)
     r_squared = Column(Numeric)
     mean_squared_error = Column(Numeric)
-    gender_importance = Column(Numeric),
-    ethnicity_importance = Column(Numeric),
-    race_importance = Column(Numeric),
-    age_at_arrest_importance = Column(Numeric),
-    known_days_in_custody_importance = Column(Numeric),
-    top_charge_at_arraign_importance = Column(Numeric),
-    first_bail_set_cash_importance = Column(Numeric),
-    prior_vfo_cnt_importance = Column(Numeric),
-    prior_nonvfo_cnt_importance = Column(Numeric),
-    prior_misd_cnt_importance = Column(Numeric),
-    pend_nonvfo_importance = Column(Numeric),
-    pend_misd_importance = Column(Numeric),
-    pend_vfo_importance = Column(Numeric),
-    county_name_importance = Column(Numeric),
-    judge_name_importance = Column(Numeric),
+    gender_importance = Column(Numeric)
+    ethnicity_importance = Column(Numeric)
+    race_importance = Column(Numeric)
+    age_at_arrest_importance = Column(Numeric)
+    known_days_in_custody_importance = Column(Numeric)
+    top_charge_at_arraign_importance = Column(Numeric)
+    first_bail_set_cash_importance = Column(Numeric)
+    prior_vfo_cnt_importance = Column(Numeric)
+    prior_nonvfo_cnt_importance = Column(Numeric)
+    prior_misd_cnt_importance = Column(Numeric)
+    pend_nonvfo_importance = Column(Numeric)
+    pend_misd_importance = Column(Numeric)
+    pend_vfo_importance = Column(Numeric)
+    county_name_importance = Column(Numeric)
+    judge_name_importance = Column(Numeric)
     median_household_income_importance = Column(Numeric)
+    time_elapsed = Column(Numeric)
+    created_at = Column(Time, default=time.time())
 
 
 class Judge(Base):
@@ -142,7 +145,7 @@ class County(Base):
     average_bail_amount = Column(Numeric)
     number_of_cases = Column(Integer)
     median_income = Column(Integer)
-    median_id = Column(UUID(as_uuid=True), ForeignKey("ny_income.income_uuid"))
+    median_id = Column(UUID(as_uuid=True), ForeignKey("pretrial.ny_income.income_uuid"))
 
 
 class District(Base):
@@ -151,7 +154,7 @@ class District(Base):
     district_uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     district_name = Column(Text, nullable=False)
     region = Column(Text)
-    county_id = Column(UUID(as_uuid=True), ForeignKey("counties.county_uuid"))
+    county_id = Column(UUID(as_uuid=True), ForeignKey("pretrial.counties.county_uuid"))
 
     __table_args__ = (
         UniqueConstraint("district_name", "region", "county_id", name="_district_uc"),
@@ -264,13 +267,14 @@ class Case(Base):
     rearrest_firearm = Column(Text)
     rearrest_date_firearm = Column(Text)
     arr_cycle_id = Column(Text)
-    race_id = Column(UUID(as_uuid=True), ForeignKey("races.race_uuid"))
-    court_id = Column(UUID(as_uuid=True), ForeignKey("courts.court_uuid"))
-    county_id = Column(UUID(as_uuid=True), ForeignKey("counties.county_uuid"))
-    top_charge_id = Column(UUID(as_uuid=True), ForeignKey("crimes.crime_uuid"))
-    representation_id = Column(UUID(as_uuid=True), ForeignKey("representation.representation_uuid"))
-    judge_id = Column(UUID(as_uuid=True), ForeignKey("judges.judge_uuid"))
-    district_id = Column(UUID(as_uuid=True), ForeignKey("districts.district_uuid"))
+    race_id = Column(UUID(as_uuid=True), ForeignKey("pretrial.races.race_uuid"))
+    court_id = Column(UUID(as_uuid=True), ForeignKey("pretrial.courts.court_uuid"))
+    county_id = Column(UUID(as_uuid=True), ForeignKey("pretrial.counties.county_uuid"))
+    top_charge_id = Column(UUID(as_uuid=True), ForeignKey("pretrial.crimes.crime_uuid"))
+    crime_id = Column(UUID(as_uuid=True), ForeignKey("pretrial.crimes.crime_uuid"))
+    representation_id = Column(UUID(as_uuid=True), ForeignKey("pretrial.representation.representation_uuid"))
+    judge_id = Column(UUID(as_uuid=True), ForeignKey("pretrial.judges.judge_uuid"))
+    district_id = Column(UUID(as_uuid=True), ForeignKey("pretrial.districts.district_uuid"))
 
 
 class Law(Base):
