@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from .classes import TrainerConfig, model_config
 from .env import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL
 from .env import GOOD_HYPERPARAMETERS
-from .load import create_db_connection, load_data, split_data
+from .data import create_db_connection, load_data, split_data
 from .model import Model
 from .notify import send_notification, NotificationData
 from .preprocess import Preprocessor
@@ -56,7 +56,8 @@ class ModelTrainer:
         """
         if hasattr(model, "feature_importances_"):
             importance_df = pd.read_csv(os.path.join(self.config.outputs_dir, "feature_importance.csv"))
-            plot_file_path = plot_feature_importance(importance_df, self.config.outputs_dir, plot_params)
+            plot_file_path = plot_feature_importance(importance_df, self.config.outputs_dir, plot_params,
+                                                     self.judge_filter, self.county_filter)
             mlflow.log_artifact(plot_file_path)
 
             profile_path = save_importance_profile(importance_df, self.config.baseline_profile_name,
@@ -178,13 +179,7 @@ class Preprocessing:
     def load_and_preprocess_data(self):
         """Load and preprocess data."""
         session = Session(self.engine)
-        data = load_data(session)
-
-        # Apply filters if provided
-        if self.judge_filter:
-            data = data[data['judge'] == self.judge_filter]
-        if self.county_filter:
-            data = data[data['county'] == self.county_filter]
+        data = load_data(session, self.judge_filter, self.county_filter)
 
         x_column, _y_column, y_bin = Preprocessor().preprocess_data(data, self.config.outputs_dir)
         x_train, y_train, x_test, y_test = split_data(x_column, y_bin, self.config.outputs_dir)

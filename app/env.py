@@ -1,6 +1,7 @@
 """This file contains the parameters used in the application."""
 
 import os
+from typing import List
 
 from dotenv import load_dotenv
 from sqlalchemy import select, cast, Numeric, Select
@@ -100,7 +101,7 @@ GOOD_HYPERPARAMETERS = {
 
 BAIL_THRESHOLD = 80000
 
-QUERY_LIMIT = 100000
+QUERY_LIMIT = 1000000
 
 BASE_QUERY: Select = (
     select(
@@ -117,6 +118,7 @@ BASE_QUERY: Select = (
         Case.pend_nonvfo,
         Case.pend_misd,
         Case.pend_vfo,
+        County.county_name,
         Judge.judge_name,
         NYIncome.median_household_income
     )

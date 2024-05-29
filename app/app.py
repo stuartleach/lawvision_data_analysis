@@ -9,7 +9,7 @@ def run():
     """This method runs the application."""
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
     logging.info("Running the application...")
-    ModelTrainer().run()
+    ModelTrainer(judge_filter="", county_filter="New York").run()
 
 
 def main():

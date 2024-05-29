@@ -8,7 +8,8 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
-from .env import BASE_QUERY, QUERY_LIMIT
+from .db_types import County, Judge
+from .env import BASE_QUERY
 
 
 def create_engine_connection(user: str, password: str, host: str, port: str, dbname: str) -> Engine:
@@ -35,23 +36,47 @@ def run_migrations():
     command.upgrade(alembic_cfg, "head")
 
 
-def load_data(session: Session):
+def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.DataFrame:
+    """
+    Load data from the database with optional filters for judge and county.
+
+    Args:
+        session (Session): The SQLAlchemy session to use for the query.
+        judge_filter (str, optional): The name of the judge to filter by. Defaults to None.
+        county_filter (str, optional): The name of the county to filter by. Defaults to None.
+
+    Returns:
+        pd.DataFrame: The queried data as a pandas DataFrame.
+    """
     logging.info("Loading data from database...")
 
-    stmt = (
-        BASE_QUERY
-    )
+    # Start with a basic query
+    # Start with a basic query
+    query = BASE_QUERY
 
-    stmt = stmt.limit(QUERY_LIMIT)
+    # Apply judge filter if provided
+    if judge_filter:
+        logging.info(f"Applying judge filter: {judge_filter}")
+        query = query.where(Judge.judge_name == judge_filter)
 
-    results = session.execute(stmt).all()
-    logging.info("Data loaded successfully.")
-    return pd.DataFrame(results, columns=[
+    # Apply county filter if provided
+    if county_filter:
+        logging.info(f"Applying county filter: {county_filter}")
+        query = query.where(County.county_name == county_filter)
+
+    # Execute the query
+    results = session.execute(query).fetchall()
+
+    # Convert results to a pandas DataFrame
+    df = pd.DataFrame(results, columns=[
         "gender", "ethnicity", "race", "age_at_arrest", "known_days_in_custody",
         "top_charge_at_arraign", "first_bail_set_cash", "prior_vfo_cnt",
         "prior_nonvfo_cnt", "prior_misd_cnt", "pend_nonvfo", "pend_misd",
-        "pend_vfo", "judge_name", "median_household_income"
+        "pend_vfo", "judge_name", "median_household_income", "county_name",
     ])
+
+    logging.info("Data loading complete.")
+    return df
 
 
 def create_db_connection() -> Engine:
