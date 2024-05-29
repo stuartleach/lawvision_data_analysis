@@ -3,7 +3,7 @@
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import select, cast, Numeric
+from sqlalchemy import select, cast, Numeric, Select
 
 from app.db_types import Case, Race, Representation, Court, NYIncome, District, County, Judge
 
@@ -102,7 +102,7 @@ BAIL_THRESHOLD = 80000
 
 QUERY_LIMIT = 100000
 
-BASE_QUERY = (
+BASE_QUERY: Select = (
     select(
         Case.gender,
         Case.ethnicity,

@@ -130,7 +130,7 @@ def plot_feature_importance(importance_df, outputs_dir, plot_params: PlotParams)
     plt.figure(figsize=(20, 32))
     plt.style.use("seaborn-darkgrid")
     ax = sns.barplot(
-        x="Importance", y="Feature", data=importance_df.head(20), palette="viridis"
+        x="Importance", y="Feature", data=importance_df.head(20), palette="viridis", hue="Feature", legend=False
     )
     plt.title("Top 10 Features That Impact Bail Amount", fontsize=30)
     ax.set_xticklabels(ax.get_xticklabels(), fontsize=18, weight="bold")
