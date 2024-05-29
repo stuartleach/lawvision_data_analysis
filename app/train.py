@@ -31,12 +31,14 @@ class ModelTrainer:
     """Model trainer class."""
     load_dotenv()
 
-    def __init__(self):
+    def __init__(self, judge_filter=None, county_filter=None):
         self.config = TrainerConfig()
         self.session = Session(autocommit=False, autoflush=False, bind=create_db_connection())
         self.engine = create_db_connection()
         self.total_cases = 0
         self.num_features = 0
+        self.judge_filter = judge_filter
+        self.county_filter = county_filter
         self.ensure_outputs_dir()
         logging.info("Initialized ModelTrainer")
 
@@ -77,13 +79,11 @@ class ModelTrainer:
 
     def get_unique_values(self, column):
         """Get unique values for a column in the dataset."""
-
         logging.info(f"Getting unique values for column: {column}")
 
         data = load_data(self.session)
-        print(data.columns.tolist())
         logging.info(f"Loaded data columns: {data.columns}")
-        # print(data.head().values.tolist())
+
         if column not in data.columns:
             logging.error(f"Column '{column}' not found in data.")
             raise KeyError(f"Column '{column}' not found in data.")
@@ -91,7 +91,7 @@ class ModelTrainer:
 
     def train_model(self):
         """Train model"""
-        preprocessor = Preprocessing(self.config)
+        preprocessor = Preprocessing(self.config, self.judge_filter, self.county_filter)
         _, x_train, y_train, x_test, y_test = preprocessor.load_and_preprocess_data()
         self.total_cases = preprocessor.total_cases
         self.num_features = preprocessor.num_features
@@ -101,8 +101,7 @@ class ModelTrainer:
 
         mlflow.set_experiment("LawVision Model Training")
 
-        with mlflow.start_run(
-                run_name="Baseline Model Training Run"):
+        with mlflow.start_run(run_name="Baseline Model Training Run"):
             for model_type in model_config.model_types:
                 with mlflow.start_run(nested=True, run_name=model_type):
                     mlflow.log_param("model_type", model_type)
@@ -168,17 +167,25 @@ class ModelTrainer:
 
 
 class Preprocessing:
-    def __init__(self, config):
+    def __init__(self, config, judge_filter=None, county_filter=None):
         self.config = config
         self.total_cases = 0
         self.num_features = 0
         self.engine = create_db_connection()
+        self.judge_filter = judge_filter
+        self.county_filter = county_filter
 
     def load_and_preprocess_data(self):
         """Load and preprocess data."""
-
         session = Session(self.engine)
         data = load_data(session)
+
+        # Apply filters if provided
+        if self.judge_filter:
+            data = data[data['judge'] == self.judge_filter]
+        if self.county_filter:
+            data = data[data['county'] == self.county_filter]
+
         x_column, _y_column, y_bin = Preprocessor().preprocess_data(data, self.config.outputs_dir)
         x_train, y_train, x_test, y_test = split_data(x_column, y_bin, self.config.outputs_dir)
         self.total_cases = len(data)
