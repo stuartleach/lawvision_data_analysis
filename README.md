@@ -37,20 +37,27 @@ The purpose of this project is to understand how closely judges in New York Stat
 ## Methodology
 
 1. **Create a "New York Judge" profile** by analyzing the bail decisions of judges in New York State. Use regression models such as Gradient Boosting and Random Forest to assign importance values to various features that might be relevant to the case.
-2. **Create a similar profile for each county**: Identify what's more important to a Kings County judge than a Richmond County judge when compared to the average New York State judge.
+2. **Create a similar profile for each county**: Identify what correlations are stronger with a Kings County judge's decisions than a Richmond County judge's decisions when compared to the average New York State judge.
 3. **Assign profiles to every judge in the state**, comparing them to judges in their county and state.
 
 ## Research Questions
 
-1. How closely do judges follow the law when setting bail? Are there factors that have an outsized influence on the amount of bail set?
+1. Are there factors that have an correlation on the amount of bail set?
 2. What factors have a high importance value that shouldn't, e.g., race, gender, median income of the county?
-3. What factors have a higher importance value to some judges than others? One judge, for example, might deem a defendant's age as more significant than prior criminal convictions.
+3. What factors have a higher importance value to some judges than others? 
 
-## Disclaimer
+> [!IMPORTANT]
+> ### Drawing inferences
+> Correlation ≠ Causation. This model is good at noticing patterns, but responsible inferences shouldn't take us further than appreciating correlations between datapoints—i.e. just because a judge's bail amounts reflect a strikingly high race-importance, for example, we ought not to assume race plays into the bail decisions. This model is more interested in questions than answers, and is certainly not meant to tar-and-feather anyone in the justice system.
 
-**This is not and will never be** a tool to be used by counsel. It can't teach a lawyer what to emphasize on their client's behalf. This model will never be as effective as a reasonably perceptive defense attorney. This project is only to understand the extent that judges in New York State abide by the rules laid out in CPL 510.10.
+> [!NOTE]  
+> ### Disclaimer
+> **This is not and will never be** a tool to be used by counsel. It can't teach a lawyer what to emphasize on their client's behalf. This model will never be as effective as a reasonably perceptive defense attorney. This project is only to understand the extent that judges in New York State abide by the rules laid out in CPL 510.10.
 
-_________
+> [!CAUTION]
+> ### Incompleteness of the dataset
+> This data is incomplete, both in its range and its scope. In a perfect world (or one where compute is cheaper and court records are more thorough), this model would take *bail eligibility* into account, and set ***ROR*** "release on recognizance" decisions to a bail amount of $0.00, which would give us deeper and more complete insight into a correlations between bail amounts and other factors.
+> As it is currently running, the model only accounts for bail amounts > 0.
 
 ## Setup
 
