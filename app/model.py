@@ -138,15 +138,16 @@ class Model:
         self.manager = self._initialize_manager()
 
     def _initialize_manager(self):
-        return RegressionModeler(
-            self.model_type, self.good_hyperparameters
-        )
+        return RegressionModeler(self.model_type, self.good_hyperparameters)
 
     def train(self, x_train, y_train):
         self.manager.train(x_train, y_train)
 
     def evaluate(self, x_test, y_test):
         return self.manager.evaluate(x_test, y_test)
+
+    def get_feature_importances(self):
+        return self.manager.model.feature_importances_
 
     def log_metrics(self, mse, r2, x, outputs_dir):
         self.manager.log_metrics(mse, r2, x, outputs_dir)

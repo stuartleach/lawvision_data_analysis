@@ -1,4 +1,3 @@
-import time
 import uuid
 
 from sqlalchemy import (
@@ -9,7 +8,7 @@ from sqlalchemy import (
     Integer,
     Numeric,
     Text,
-    UniqueConstraint, JSON, Enum, Time,
+    UniqueConstraint, JSON, Enum,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import declarative_base
@@ -21,7 +20,7 @@ class Result(Base):
     __tablename__ = "results"
     __table_args__ = {"schema": "pretrial"}
     result_uuid = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    model_target_type = Enum("county_name", "judge_name", "baseline", nullable=False)
+    model_target_type = Column(Enum("county_name", "judge_name", "baseline", name="model_target_type"), nullable=False)
     model_target = Column(Text, default="baseline", nullable=False)
     model_type = Column(Text, nullable=False)
     model_params = Column(JSON)
@@ -45,7 +44,7 @@ class Result(Base):
     judge_name_importance = Column(Numeric)
     median_household_income_importance = Column(Numeric)
     time_elapsed = Column(Numeric)
-    created_at = Column(Time, default=time.time())
+    created_at = Column(None)
 
 
 class Judge(Base):

@@ -5,16 +5,13 @@ import time
 import mlflow
 import mlflow.sklearn
 import pandas as pd
-from dotenv import load_dotenv
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from .classes import TrainerConfig, model_config
-from .env import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL
-from .env import GOOD_HYPERPARAMETERS
-from .data import create_db_connection, load_data, split_data
+from .classes import TrainerConfig, model_config, ResultObject
+from .env import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL, GOOD_HYPERPARAMETERS
 from .model import Model
 from .notify import send_notification, NotificationData
-from .preprocess import Preprocessor
 from .utils import (
     PlotParams,
     compare_r2,
@@ -29,10 +26,12 @@ from .utils import (
 
 class ModelTrainer:
     """Model trainer class."""
-    load_dotenv()
 
-    def __init__(self, judge_filter=None, county_filter=None):
+    def __init__(self, judge_filter=None, county_filter=None, quiet=False):
+        self.model = None
+        from .data import create_db_connection  # Import here to avoid circular import
         self.config = TrainerConfig()
+        self.quiet = quiet
         self.session = Session(autocommit=False, autoflush=False, bind=create_db_connection())
         self.engine = create_db_connection()
         self.total_cases = 0
@@ -48,12 +47,7 @@ class ModelTrainer:
             os.makedirs(self.config.outputs_dir)
 
     def plot_and_save_importance(self, model, plot_params: PlotParams):
-        """Plot and save feature importance.
-
-        :param model:
-        :param plot_params:
-        :return:
-        """
+        """Plot and save feature importance."""
         if hasattr(model, "feature_importances_"):
             importance_df = pd.read_csv(os.path.join(self.config.outputs_dir, "feature_importance.csv"))
             plot_file_path = plot_feature_importance(importance_df, self.config.outputs_dir, plot_params,
@@ -81,7 +75,7 @@ class ModelTrainer:
     def get_unique_values(self, column):
         """Get unique values for a column in the dataset."""
         logging.info(f"Getting unique values for column: {column}")
-
+        from .data import load_data  # Import here to avoid circular import
         data = load_data(self.session)
         logging.info(f"Loaded data columns: {data.columns}")
 
@@ -92,8 +86,14 @@ class ModelTrainer:
 
     def train_model(self):
         """Train model"""
+        from .data import save_data, load_data  # Import here to avoid circular import
         preprocessor = Preprocessing(self.config, self.judge_filter, self.county_filter)
-        _, x_train, y_train, x_test, y_test = preprocessor.load_and_preprocess_data()
+        try:
+            _, x_train, y_train, x_test, y_test = preprocessor.load_and_preprocess_data()
+        except ValueError as e:
+            logging.error(f"Error in preprocessing data: {e}")
+            return
+
         self.total_cases = preprocessor.total_cases
         self.num_features = preprocessor.num_features
 
@@ -143,7 +143,34 @@ class ModelTrainer:
                 model_info={"model_types": model_config.model_types, "num_features": self.num_features},
             )
 
+            model_target_type = "judge_name" if self.judge_filter else "county_name" if self.county_filter else "baseline"
+            model_params = modeler.manager.model.get_params()
+            importance_df = pd.read_csv(os.path.join(self.config.outputs_dir, "feature_importance.csv"))
+
+            df = load_data(self.session, self.judge_filter, self.county_filter)
+
+            # Ensure 'first_bail_set_cash' is numeric
+            df['first_bail_set_cash'] = pd.to_numeric(df['first_bail_set_cash'], errors='coerce')
+
+            average_bail_amount = df['first_bail_set_cash'].mean()
+
+            result_obj = ResultObject(
+                model_type=model_type,
+                model_target_type=model_target_type,
+                model_target=self.judge_filter if self.judge_filter else self.county_filter if self.county_filter else "baseline",
+                judge_filter=self.judge_filter,
+                county_filter=self.county_filter,
+                model_params=model_params,
+                average_bail_amount=average_bail_amount,
+                r_squared=average_r2,
+                mean_squared_error=mse,
+                dataframe=importance_df,
+                total_cases=self.total_cases,
+            )
+
             plot_file_path = self.plot_and_save_importance(modeler.manager.model, plot_params)
+
+            save_data(self.session, result_obj)
 
             performance_data = {
                 "average_r2": average_r2,
@@ -157,18 +184,20 @@ class ModelTrainer:
                 "model_types": model_config.model_types,
             }
 
-            notification_data = NotificationData(
-                performance_data=performance_data,
-                plot_file_path=plot_file_path,
-                model_info=model_info,
-            )
+            if not self.quiet:
+                notification_data = NotificationData(
+                    performance_data=performance_data,
+                    plot_file_path=plot_file_path,
+                    model_info=model_info,
+                )
 
-            send_notification(notification_data, DISCORD_WEBHOOK_URL, DISCORD_AVATAR_URL)
+                send_notification(notification_data, DISCORD_WEBHOOK_URL, DISCORD_AVATAR_URL)
             logging.info("Model training completed.")
 
 
 class Preprocessing:
     def __init__(self, config, judge_filter=None, county_filter=None):
+        from .data import create_db_connection  # Import here to avoid circular import
         self.config = config
         self.total_cases = 0
         self.num_features = 0
@@ -178,6 +207,8 @@ class Preprocessing:
 
     def load_and_preprocess_data(self):
         """Load and preprocess data."""
+        from .preprocess import Preprocessor
+        from .data import load_data, split_data  # Import here to avoid circular import
         session = Session(self.engine)
         data = load_data(session, self.judge_filter, self.county_filter)
 
@@ -186,3 +217,55 @@ class Preprocessing:
         self.total_cases = len(data)
         self.num_features = x_column.shape[1]
         return data, x_train, y_train, x_test, y_test
+
+
+def get_judges(session):
+    """Fetch the list of judges from the database."""
+    result = session.execute(text("SELECT DISTINCT judge_name FROM pretrial.judges WHERE case_count > 5"))
+    judges = [row[0] for row in result]
+    return judges
+
+
+def grade_judges_with_general_model(session, general_trainer, limit=None):
+    """Grade each judge using a pre-trained general model."""
+    from .data import load_data
+    if limit:
+        logging.info(f"Limiting the number of judges to {limit}")
+
+    judges = get_judges(session)
+    logging.info(f"Found {len(judges)} judges.")
+
+    for judge in judges:
+        logging.info(f"Grading judge: {judge}")
+        judge_data = load_data(session, judge_filter=judge)
+        if judge_data.empty:
+            logging.warning(f"No data for judge {judge}. Skipping...")
+            continue
+
+        # Apply the pre-trained model to the judge's data
+        x_judge = judge_data.drop(columns=['judge_name'])
+        y_judge = judge_data['judge_name']
+
+        mse, r2 = general_trainer.model.evaluate(x_judge, y_judge)
+        feature_importances = general_trainer.model.get_feature_importances()
+
+        # Log or save the results for the judge
+        logging.info(f"Judge: {judge}, MSE: {mse}, R2: {r2}")
+        logging.info(f"Feature importances for judge {judge}: {feature_importances}")
+
+
+def train_model_for_each_judge(session):
+    """Train a model for each judge."""
+    judges = get_judges(session)
+    logging.info(f"Found {len(judges)} judges.")
+
+    for judge in judges:
+        logging.info(f"Training model for judge: {judge}")
+        trainer = ModelTrainer(judge_filter=judge)
+        try:
+            trainer.run()
+            # Save or log the feature importances for the judge
+            feature_importances = trainer.model.get_feature_importances()
+            logging.info(f"Feature importances for judge {judge}: {feature_importances}")
+        except ValueError as e:
+            logging.error(f"Error in training model for judge {judge}: {e}")

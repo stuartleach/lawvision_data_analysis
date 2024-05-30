@@ -8,8 +8,9 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
-from .db_types import County, Judge
+from .db_types import County, Judge, Result
 from .env import BASE_QUERY
+from .train import ResultObject
 
 
 def create_engine_connection(user: str, password: str, host: str, port: str, dbname: str) -> Engine:
@@ -79,19 +80,71 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
     return df
 
 
-def save_data(session: Session, judge_filter=None, county_filter=None):
+def save_data(session: Session, result_object: ResultObject):
     """
-    Save data to a db file.
+    Save data to the results table.
 
     Args:
         session (Session): The SQLAlchemy session to use for the query.
+        dataframe (pandas.DataFrame): The data to be saved to the results table.
         judge_filter (str, optional): The name of the judge to filter by. Defaults to None.
         county_filter (str, optional): The name of the county to filter by. Defaults to None.
-    """
-    data = load_data(session, judge_filter, county_filter)
-    # write filters to Results table
+        :param result_object:
+        :param session:
 
-    logging.info("Data saved to 'data.csv'.")
+    """
+
+    model_params = result_object.model_params
+    average_bail_amount = result_object.average_bail_amount
+    r_squared = result_object.r_squared
+    mean_squared_error = result_object.mean_squared_error
+    model_type = result_object.model_type
+    dataframe = result_object.dataframe
+    judge_filter = result_object.judge_filter
+    county_filter = result_object.county_filter
+
+    # Assuming `data` is a pandas DataFrame containing the importance values
+    dataframe = dataframe.to_dict(orient="records")
+
+    print(dataframe)
+
+    if judge_filter:
+        model_target_type = 'judge_name'
+        model_target = judge_filter
+    elif county_filter:
+        model_target = county_filter
+        model_target_type = 'county_name'
+    else:
+        model_target = 'baseline'
+        model_target_type = 'baseline'
+
+    new_result = Result()
+    for row in dataframe:
+        print(row)
+        row_feature = row.get('Feature')
+        row_importance = row.get('Importance')
+        print("Row Feature: ", row_feature)
+        print("Row Importance: ", row_importance)
+        # new_result[row_feature] = row_importance
+        new_result.__setattr__(row_feature + "_importance", row_importance)
+
+    new_result.__setattr__('model_params', model_params)
+    new_result.__setattr__('average_bail_amount', average_bail_amount)
+    new_result.__setattr__('r_squared', r_squared)
+    new_result.__setattr__('mean_squared_error', mean_squared_error)
+    new_result.__setattr__('model_type', model_type)
+    new_result.__setattr__('model_target_type', model_target_type)
+    new_result.__setattr__('model_target', model_target)
+    # new_result.model_target = model_target
+
+    session.add(new_result)
+
+    try:
+        session.commit()
+        logging.info("Data saved to the results table.")
+    except Exception as e:
+        session.rollback()
+        logging.error(f"Error saving data to the results table: {e}")
 
 
 def create_db_connection() -> Engine:

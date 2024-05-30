@@ -79,6 +79,8 @@ class NotificationData:
 class TrainerConfig:
     """Data class for trainer configuration."""
     outputs_dir: str = "outputs"
+    quiet: bool = False
+    plots: bool = True
     webhook_url: str = DISCORD_WEBHOOK_URL
     avatar_url: str = DISCORD_AVATAR_URL
     baseline_profile_name: str = "baseline"
@@ -91,3 +93,22 @@ class DataLoaderConfig:
     engine: Engine
     query: str
     outputs_dir: str
+
+
+@dataclass
+class ResultObject:
+    """Result object class."""
+
+    def __init__(self, judge_filter, county_filter, model_type, model_target_type, model_target, model_params,
+                 average_bail_amount, r_squared, mean_squared_error, dataframe, total_cases):
+        self.judge_filter = judge_filter
+        self.county_filter = county_filter
+        self.model_type = model_type
+        self.model_target_type = model_target_type
+        self.model_target = model_target
+        self.model_params = model_params
+        self.average_bail_amount = average_bail_amount
+        self.r_squared = r_squared
+        self.mean_squared_error = mean_squared_error
+        self.dataframe = dataframe
+        self.total_cases = total_cases
