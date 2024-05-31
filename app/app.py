@@ -3,7 +3,6 @@ import logging
 import pandas as pd
 from sqlalchemy.orm import Session
 
-from .data import create_db_connection
 from .train import ModelTrainer, grade_targets
 
 
@@ -11,6 +10,7 @@ def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.c
               trained_model_path="outputs/trained_model.joblib"):
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
     logging.info("Running the application...")
+    from .data import create_db_connection
 
     # Create a database connection and session
     engine = create_db_connection()

@@ -1,10 +1,11 @@
 import logging
+
 import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sqlalchemy.orm import Session
 
-from .data import save_preprocessed_data, create_db_connection, load_data, split_data
+from .data import create_db_connection, load_data, split_data
 
 
 def convert_bail_amount(data):
@@ -106,6 +107,7 @@ class Preprocessing:
         :param outputs_dir: Directory to save preprocessed data
         :return: DataFrames for features (x), target (y), and binned target (y_bin)
         """
+        from .data import save_preprocessed_data
         data = convert_bail_amount(data)
         self._create_bins(data)
         data = drop_list_columns(data)
@@ -130,7 +132,8 @@ class Preprocessing:
         while any(bin_counts < bin_count_threshold):
             self.num_bins -= 1
             if self.num_bins < bin_count_threshold:
-                raise ValueError("Cannot create bins with at least 2 samples each. Consider increasing the sample size.")
+                raise ValueError(
+                    "Cannot create bins with at least 2 samples each. Consider increasing the sample size.")
             data["bail_amount_bin"] = pd.cut(data["bail_amount"], bins=self.num_bins, labels=False)
             bin_counts = data["bail_amount_bin"].value_counts()
             logging.info("Adjusted bin counts: %s", bin_counts)

@@ -258,7 +258,7 @@ def grade_targets(session, trained_data, trained_model_path, target, limit=10):
 
         # Prepare the target data for prediction
         x_target = target_data.drop(columns=['first_bail_set_cash'])
-        y_target = target_data['first_bail_set_cash']
+        target_data['first_bail_set_cash']
 
         # Preprocess the target data using the same preprocessing steps
         x_target = preprocessor.preprocess_new_data(x_target)
