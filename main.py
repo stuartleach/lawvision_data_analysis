@@ -1,4 +1,6 @@
 """This is the main file that runs the application."""
+from app.app import run
+
 
 #     Law Vision Data Analysis trains an AI model to understand which what factors play into judges' decisions when
 #     setting bail amounts.
@@ -17,9 +19,6 @@
 #
 #     You should have received a copy of the GNU General Public License
 #     along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-
-from app.app import run
 
 
 def main():

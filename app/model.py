@@ -76,6 +76,16 @@ class RegressionModeler:
             logging.error("Error evaluating model %s: %s", self.model_type, e)
             raise
 
+    def apply(self, new_data):
+        """Apply the trained model to new data and return predictions."""
+        try:
+            predictions = self.model.predict(new_data)
+            logging.info("Predictions generated successfully.")
+            return predictions
+        except Exception as e:
+            logging.error("Error generating predictions: %s", e)
+            raise
+
     def log_metrics(self, mse, r2, x, outputs_dir):
         """Log the metrics and model artifacts."""
         mlflow.log_metric("mse", mse)
@@ -145,6 +155,9 @@ class Model:
 
     def evaluate(self, x_test, y_test):
         return self.manager.evaluate(x_test, y_test)
+
+    def apply(self, new_data):
+        return self.manager.apply(new_data)
 
     def get_feature_importances(self):
         return self.manager.model.feature_importances_

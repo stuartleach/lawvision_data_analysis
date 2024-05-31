@@ -77,7 +77,7 @@ def load_importance_profile(profile_name, outputs_dir):
 
     :param profile_name:
     :param outputs_dir:
-    :return:
+    :return DataFrame:
     """
     profile_path = os.path.join(outputs_dir, f"{profile_name}_importance_profile.csv")
     if os.path.exists(profile_path):

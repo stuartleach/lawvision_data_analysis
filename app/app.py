@@ -1,12 +1,14 @@
 import logging
 
+import pandas as pd
 from sqlalchemy.orm import Session
 
 from .data import create_db_connection
+from .train import ModelTrainer, grade_targets
 
 
-def run():
-    from app.train import ModelTrainer, grade_judges_with_general_model
+def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.csv",
+              trained_model_path="outputs/trained_model.joblib"):
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
     logging.info("Running the application...")
 
@@ -14,20 +16,39 @@ def run():
     engine = create_db_connection()
     session = Session(bind=engine)
 
-    # Train the general model
-    general_trainer = ModelTrainer()
-    general_trainer.run()
+    general_trainer = None
 
-    # Grade judges using the general model
-    grade_judges_with_general_model(session, general_trainer)
+    if train:
+        # Train the general model
+        general_trainer = ModelTrainer()
+        general_trainer.run()
+        # Save the trained data to a CSV file
+        general_trainer.save_trained_data(trained_data_path)
+        # Save the trained model to a file
+        general_trainer.model.save_model(trained_model_path)
+
+    if grade:
+        if not trained_data_path or not trained_model_path:
+            raise ValueError("No trained data or model path provided for grading.")
+
+        # Load the trained data from the CSV file
+        trained_data = pd.read_csv(trained_data_path)
+        print("trained_data", trained_data)
+        for column in ["model_target", "model_type"]:
+            print("column", column)
+
+        for row in trained_data.iterrows():
+            print("row", row)
+        # Grade counties using the trained model
+        grade_targets(session, trained_data, trained_model_path, "judge")
 
     # Close the session
     session.close()
 
 
-def main():
-    run()
+def run():
+    run_model(train=False, grade=True)
 
 
 if __name__ == "__main__":
-    main()
+    run()

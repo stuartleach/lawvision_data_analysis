@@ -12,6 +12,7 @@ from .classes import TrainerConfig, model_config, ResultObject
 from .env import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL, GOOD_HYPERPARAMETERS
 from .model import Model
 from .notify import send_notification, NotificationData
+from .preprocess import Preprocessing
 from .utils import (
     PlotParams,
     compare_r2,
@@ -28,7 +29,6 @@ class ModelTrainer:
     """Model trainer class."""
 
     def __init__(self, judge_filter=None, county_filter=None, quiet=False):
-        self.model = None
         from .data import create_db_connection  # Import here to avoid circular import
         self.config = TrainerConfig()
         self.quiet = quiet
@@ -38,6 +38,7 @@ class ModelTrainer:
         self.num_features = 0
         self.judge_filter = judge_filter
         self.county_filter = county_filter
+        self.model = None  # Initialize model as None
         self.ensure_outputs_dir()
         logging.info("Initialized ModelTrainer")
 
@@ -107,21 +108,21 @@ class ModelTrainer:
                 with mlflow.start_run(nested=True, run_name=model_type):
                     mlflow.log_param("model_type", model_type)
 
-                    modeler = Model(model_type=model_type, good_hyperparameters=GOOD_HYPERPARAMETERS)
+                    self.model = Model(model_type=model_type, good_hyperparameters=GOOD_HYPERPARAMETERS)
 
                     x_train_selected, x_test_selected = x_train, x_test
 
-                    modeler.train(x_train_selected, y_train)
+                    self.model.train(x_train_selected, y_train)
 
-                    mse, r2 = modeler.evaluate(x_test_selected, y_test)
+                    mse, r2 = self.model.evaluate(x_test_selected, y_test)
                     model_r2_scores.append(r2)
-                    modeler.log_metrics(mse, r2, pd.DataFrame(x_train_selected, columns=x_train.columns),
-                                        self.config.outputs_dir)
+                    self.model.log_metrics(mse, r2, pd.DataFrame(x_train_selected, columns=x_train.columns),
+                                           self.config.outputs_dir)
 
                     # Plot Partial Dependence
-                    modeler.plot_partial_dependence(pd.DataFrame(x_test_selected, columns=x_train.columns),
-                                                    features=x_train.columns.tolist(),
-                                                    outputs_dir=self.config.outputs_dir)
+                    self.model.plot_partial_dependence(pd.DataFrame(x_test_selected, columns=x_train.columns),
+                                                       features=x_train.columns.tolist(),
+                                                       outputs_dir=self.config.outputs_dir)
 
                     mlflow.log_metric("mse", mse)
                     mlflow.log_metric("r2", r2)
@@ -144,7 +145,7 @@ class ModelTrainer:
             )
 
             model_target_type = "judge_name" if self.judge_filter else "county_name" if self.county_filter else "baseline"
-            model_params = modeler.manager.model.get_params()
+            model_params = self.model.manager.model.get_params()
             importance_df = pd.read_csv(os.path.join(self.config.outputs_dir, "feature_importance.csv"))
 
             df = load_data(self.session, self.judge_filter, self.county_filter)
@@ -168,7 +169,7 @@ class ModelTrainer:
                 total_cases=self.total_cases,
             )
 
-            plot_file_path = self.plot_and_save_importance(modeler.manager.model, plot_params)
+            plot_file_path = self.plot_and_save_importance(self.model.manager.model, plot_params)
 
             save_data(self.session, result_obj)
 
@@ -194,29 +195,11 @@ class ModelTrainer:
                 send_notification(notification_data, DISCORD_WEBHOOK_URL, DISCORD_AVATAR_URL)
             logging.info("Model training completed.")
 
-
-class Preprocessing:
-    def __init__(self, config, judge_filter=None, county_filter=None):
-        from .data import create_db_connection  # Import here to avoid circular import
-        self.config = config
-        self.total_cases = 0
-        self.num_features = 0
-        self.engine = create_db_connection()
-        self.judge_filter = judge_filter
-        self.county_filter = county_filter
-
-    def load_and_preprocess_data(self):
-        """Load and preprocess data."""
-        from .preprocess import Preprocessor
-        from .data import load_data, split_data  # Import here to avoid circular import
-        session = Session(self.engine)
-        data = load_data(session, self.judge_filter, self.county_filter)
-
-        x_column, _y_column, y_bin = Preprocessor().preprocess_data(data, self.config.outputs_dir)
-        x_train, y_train, x_test, y_test = split_data(x_column, y_bin, self.config.outputs_dir)
-        self.total_cases = len(data)
-        self.num_features = x_column.shape[1]
-        return data, x_train, y_train, x_test, y_test
+    def save_trained_data(self, path):
+        """Save the trained model data to a CSV file."""
+        importance_df = pd.read_csv(os.path.join(self.config.outputs_dir, "feature_importance.csv"))
+        importance_df.to_csv(path, index=False)
+        logging.info(f"Trained data saved to {path}")
 
 
 def get_judges(session):
@@ -226,32 +209,72 @@ def get_judges(session):
     return judges
 
 
-def grade_judges_with_general_model(session, general_trainer, limit=None):
-    """Grade each judge using a pre-trained general model."""
+def get_counties(session):
+    """Fetch the list of counties from the database."""
+    result = session.execute(text("SELECT DISTINCT county_name FROM pretrial.counties "
+                                  "WHERE counties.number_of_cases > 5"))
+
+    counties = [row[0] for row in result]
+    return counties
+
+
+def grade_targets(session, trained_data, trained_model_path, target, limit=10):
+    """Grade each judge or county using a pre-trained general model."""
     from .data import load_data
+
+    targets = None
+
+    if target == "judge":
+        logging.info("Grading judges using the general model.")
+        targets = get_judges(session)
+
+    elif target == "county":
+        logging.info("Grading counties using the general model.")
+        targets = get_counties(session)
+
     if limit:
-        logging.info(f"Limiting the number of judges to {limit}")
+        logging.info(f"Limiting the number of targets to {limit}")
 
-    judges = get_judges(session)
-    logging.info(f"Found {len(judges)} judges.")
+    preprocessor = Preprocessing(TrainerConfig())
+    try:
+        _, x_train, y_train, x_test, y_test = preprocessor.load_and_preprocess_data()
+    except ValueError as e:
+        logging.error(f"Error in preprocessing data: {e}")
+        return
 
-    for judge in judges:
-        logging.info(f"Grading judge: {judge}")
-        judge_data = load_data(session, judge_filter=judge)
-        if judge_data.empty:
-            logging.warning(f"No data for judge {judge}. Skipping...")
+    logging.info(f"Found {len(targets)} {target} targets.")
+
+    for tgt in targets:
+        logging.info(f"Grading target: {tgt}")
+        target_data = None
+        if target == "judge":
+            target_data = load_data(session, judge_filter=tgt)
+        if target == "county":
+            target_data = load_data(session, county_filter=tgt)
+
+        if target_data.empty:
+            logging.warning(f"No data for target {tgt}. Skipping...")
             continue
 
-        # Apply the pre-trained model to the judge's data
-        x_judge = judge_data.drop(columns=['judge_name'])
-        y_judge = judge_data['judge_name']
+        # Prepare the target data for prediction
+        x_target = target_data.drop(columns=['first_bail_set_cash'])
+        y_target = target_data['first_bail_set_cash']
 
-        mse, r2 = general_trainer.model.evaluate(x_judge, y_judge)
-        feature_importances = general_trainer.model.get_feature_importances()
+        # Preprocess the target data using the same preprocessing steps
+        x_target = preprocessor.preprocess_new_data(x_target)
 
-        # Log or save the results for the judge
-        logging.info(f"Judge: {judge}, MSE: {mse}, R2: {r2}")
-        logging.info(f"Feature importances for judge {judge}: {feature_importances}")
+        # Load the pre-trained model
+        trained_model = Model(model_type='gradient_boosting', good_hyperparameters=GOOD_HYPERPARAMETERS)
+        trained_model.load_model(trained_model_path)
+
+        # Apply the pre-trained model to the target's data to generate predictions
+        predictions = trained_model.apply(x_target)
+
+        # Log the results for the target
+        logging.info(f"Predictions for target {tgt}: {predictions}")
+
+        feature_importances = trained_model.get_feature_importances()
+        logging.info(f"Feature importances for target {tgt}: {feature_importances}")
 
 
 def train_model_for_each_judge(session):
