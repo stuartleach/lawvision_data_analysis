@@ -5,7 +5,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sqlalchemy.orm import Session
 
-from .data import create_db_connection, load_data, split_data
+from .data import create_db_connection, split_data
+from .db.db_actions import load_data
 
 
 def convert_bail_amount(data):

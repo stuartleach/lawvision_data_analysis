@@ -1,18 +1,13 @@
 import logging
 
+import pandas as pd
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import Session
 
-from app.classes import ResultObject
-from app.db.db_types import Result, County, Judge
-from app.env import BASE_QUERY
 
-import pandas as pd
-
-
-def save_data(session: Session, result_object: ResultObject):
+def save_data(session: Session, result_object):
     """
     Save data to the results table.
 
@@ -25,6 +20,7 @@ def save_data(session: Session, result_object: ResultObject):
         :param session:
 
     """
+    from app.db.db_types import Result
 
     model_params = result_object.model_params
     average_bail_amount = result_object.average_bail_amount
@@ -91,8 +87,10 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
     Returns:
         pd.DataFrame: The queried data as a pandas DataFrame.
     """
-    logging.info("Loading data from database...")
+    from app.db.db_types import County, Judge
+    from app.env import BASE_QUERY
 
+    logging.info("Loading data from database...")
     # Start with a basic query
     # Start with a basic query
     query = BASE_QUERY

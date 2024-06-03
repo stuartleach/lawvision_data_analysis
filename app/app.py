@@ -45,12 +45,14 @@ def run_model(source="db", train=True, grade=False, trained_data_path="outputs/t
 
 
 def run_using_csv():
-
+    data = pd.read_csv("./sources/ONYC for Web.csv")
+    print("data", data.head())
 
 
 def run():
     # run_model(source="db", train=True, grade=False)
-    data = pd.read_csv("data.csv")
+    # data = pd.read_csv("data.csv")
+    run_using_csv()
 
 
 if __name__ == "__main__":
