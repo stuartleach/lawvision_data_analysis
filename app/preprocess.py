@@ -42,6 +42,9 @@ def separate_features_and_target(data):
     :param data: DataFrame containing the data
     :return: DataFrames for features (x), target (y), and binned target (y_bin)
     """
+    if 'bail_amount' not in data.columns or 'bail_amount_bin' not in data.columns:
+        raise KeyError("'bail_amount' or 'bail_amount_bin' column not found in data.")
+
     x = data.drop(columns=["bail_amount", "bail_amount_bin"])
     y = data["bail_amount"]
     y_bin = data["bail_amount_bin"]
@@ -84,7 +87,7 @@ class Preprocessing:
         session = Session(self.engine)
         data = load_data(session, self.judge_filter, self.county_filter)
 
-        data = self.preprocess_data(data, self.config.outputs_dir)
+        x, y, y_bin = self.preprocess_data(data, self.config.outputs_dir)
 
         x_column, _y_column, y_bin = separate_features_and_target(data)
 

@@ -27,6 +27,8 @@ def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.c
         # Save the trained model to a file
         general_trainer.model.save_model(trained_model_path)
 
+    logging.info("general_trainer: %s", general_trainer)
+
     if grade:
         if not trained_data_path or not trained_model_path:
             raise ValueError("No trained data or model path provided for grading.")
@@ -47,7 +49,7 @@ def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.c
 
 
 def run():
-    run_model(train=False, grade=True)
+    run_model(train=True, grade=False)
 
 
 if __name__ == "__main__":

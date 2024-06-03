@@ -2,39 +2,13 @@ import logging
 import os
 
 import pandas as pd
-from alembic import command
-from alembic.config import Config
 from sklearn.model_selection import StratifiedShuffleSplit
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from .db_types import County, Judge, Result
+from app.db.db_types import County, Judge, Result
 from .env import BASE_QUERY
 from .train import ResultObject
-
-
-def create_engine_connection(user: str, password: str, host: str, port: str, dbname: str) -> Engine:
-    """
-    Create a connection to the database.
-
-    :param user: Database user.
-    :param password: Database password.
-    :param host: Database host.
-    :param port: Database port.
-    :param dbname: Database name.
-    :return: SQLAlchemy Engine.
-    """
-    connection_string = f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
-    return create_engine(connection_string)
-
-
-def run_migrations():
-    """
-    Run Alembic migrations.
-    """
-    # Load the Alembic configuration
-    alembic_cfg = Config("alembic.ini")
-    command.upgrade(alembic_cfg, "head")
 
 
 def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.DataFrame:

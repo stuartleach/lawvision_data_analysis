@@ -5,6 +5,8 @@ import time
 import mlflow
 import mlflow.sklearn
 import pandas as pd
+import shap
+from matplotlib import pyplot as plt
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -69,6 +71,32 @@ class ModelTrainer:
             return plot_file_path
         return "No feature importances available."
 
+    def calculate_and_log_shap_values(self, model, x_train, x_test):
+        """Calculate and log SHAP values."""
+        explainer = shap.TreeExplainer(model)
+        shap_values = explainer.shap_values(x_test)
+
+        # Plot SHAP summary plot
+        shap_summary_plot_path = os.path.join(self.config.outputs_dir, "shap_summary_plot.png")
+        shap.summary_plot(shap_values, x_test, show=False)
+        plt.savefig(shap_summary_plot_path)
+        plt.close()
+        mlflow.log_artifact(shap_summary_plot_path)
+
+        # save shap_values to csv
+        shap_values_df = pd.DataFrame(shap_values, columns=x_test.columns)
+        shap_values_path = os.path.join(self.config.outputs_dir, "shap_values.csv")
+        shap_values_df.to_csv(shap_values_path, index=False)
+        mlflow.log_artifact(shap_values_path)
+
+        # Plot SHAP dependence plot for each feature
+        for feature in x_test.columns:
+            shap_dependence_plot_path = os.path.join(self.config.outputs_dir, f"shap_dependence_plot_{feature}.png")
+            shap.dependence_plot(feature, shap_values, x_test, show=False)
+            plt.savefig(shap_dependence_plot_path)
+            plt.close()
+            mlflow.log_artifact(shap_dependence_plot_path)
+
     def run(self):
         """Run the model training process."""
         self.train_model()
@@ -123,6 +151,9 @@ class ModelTrainer:
                     self.model.plot_partial_dependence(pd.DataFrame(x_test_selected, columns=x_train.columns),
                                                        features=x_train.columns.tolist(),
                                                        outputs_dir=self.config.outputs_dir)
+
+                    # Calculate and log SHAP values
+                    self.calculate_and_log_shap_values(self.model.manager.model, x_train_selected, x_test_selected)
 
                     mlflow.log_metric("mse", mse)
                     mlflow.log_metric("r2", r2)

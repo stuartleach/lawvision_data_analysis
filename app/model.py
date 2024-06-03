@@ -111,6 +111,12 @@ class RegressionModeler:
 
     def plot_partial_dependence(self, x, features, outputs_dir):
         """Plot partial dependence for the given features."""
+
+        # save partial dependences to csv"
+        pdp_file_path = os.path.join(outputs_dir, "partial_dependence.csv")
+        pd.Series(self.model.feature_importances_, index=x.columns).to_csv(pdp_file_path)
+        logging.info("Partial Dependence Plot saved as '%s'", pdp_file_path)
+
         _, ax = plt.subplots(figsize=(12, 8))
         PartialDependenceDisplay.from_estimator(self.model, x, features=features).plot(
             ax=ax
