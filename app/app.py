@@ -6,18 +6,14 @@ from sqlalchemy.orm import Session
 from .train import ModelTrainer, grade_targets
 
 
-def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.csv",
+def run_model(source="db", train=True, grade=False, trained_data_path="outputs/trained_data.csv",
               trained_model_path="outputs/trained_model.joblib"):
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-    logging.info("Running the application...")
     from .data import create_db_connection
-
-    # Create a database connection and session
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
     engine = create_db_connection()
     session = Session(bind=engine)
-
+    logging.info("Running the application...")
     general_trainer = None
-
     if train:
         # Train the general model
         general_trainer = ModelTrainer()
@@ -48,8 +44,13 @@ def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.c
     session.close()
 
 
+def run_using_csv():
+
+
+
 def run():
-    run_model(train=True, grade=False)
+    # run_model(source="db", train=True, grade=False)
+    data = pd.read_csv("data.csv")
 
 
 if __name__ == "__main__":
