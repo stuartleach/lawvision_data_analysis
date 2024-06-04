@@ -3,27 +3,35 @@ import logging
 import pandas as pd
 from sqlalchemy.orm import Session
 
-from .train import ModelTrainer, grade_targets
 
-
-def run_model(source="db", train=True, grade=False, trained_data_path="outputs/trained_data.csv",
+def run_model(source="csv", train=True, grade=False, trained_data_path="outputs/trained_data.csv",
               trained_model_path="outputs/trained_model.joblib"):
-    from .data import create_db_connection
+    from .train import ModelTrainer
+    from .train import grade_targets
+    from app import create_db_connection
+
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-    engine = create_db_connection()
-    session = Session(bind=engine)
-    logging.info("Running the application...")
-    general_trainer = None
+    if source == "db":
+        engine = create_db_connection()
+        session = Session(bind=engine)
+        general_trainer = ModelTrainer(source="db")
+        logging.info("Running the application using db...")
+    elif source == "csv":
+        session = None
+        general_trainer = ModelTrainer(source="csv")
+        logging.info("Running the application using csv...")
+    else:
+        raise ValueError("Invalid source provided. Please provide either 'db' or 'csv'.")
+
     if train:
         # Train the general model
-        general_trainer = ModelTrainer()
         general_trainer.run()
         # Save the trained data to a CSV file
         general_trainer.save_trained_data(trained_data_path)
         # Save the trained model to a file
         general_trainer.model.save_model(trained_model_path)
 
-    logging.info("general_trainer: %s", general_trainer)
+    # logging.info("general_trainer: %s", general_trainer)
 
     if grade:
         if not trained_data_path or not trained_model_path:
@@ -41,18 +49,12 @@ def run_model(source="db", train=True, grade=False, trained_data_path="outputs/t
         grade_targets(session, trained_data, trained_model_path, "judge")
 
     # Close the session
-    session.close()
-
-
-def run_using_csv():
-    data = pd.read_csv("./sources/ONYC for Web.csv")
-    print("data", data.head())
+    if session:
+        session.close()
 
 
 def run():
-    # run_model(source="db", train=True, grade=False)
-    # data = pd.read_csv("data.csv")
-    run_using_csv()
+    run_model(source="csv", train=True, grade=False)
 
 
 if __name__ == "__main__":

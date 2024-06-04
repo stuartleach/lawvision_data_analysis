@@ -1,10 +1,25 @@
 import logging
+import os
 
 import pandas as pd
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, Engine
 from sqlalchemy.orm import Session
+
+
+def create_db_connection() -> Engine:
+    """
+    Create a connection to the database.
+
+    :return: SQLAlchemy Engine.
+    """
+    user = os.environ.get("DB_USER")
+    password = os.environ.get("DB_PASSWORD")
+    host = os.environ.get("DB_HOST")
+    port = os.environ.get("DB_PORT")
+    dbname = os.environ.get("DB_NAME")
+    return create_engine_connection(user, password, host, port, dbname)
 
 
 def save_data(session: Session, result_object):
@@ -75,7 +90,7 @@ def save_data(session: Session, result_object):
         logging.error(f"Error saving data to the results table: {e}")
 
 
-def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.DataFrame:
+def load_data_from_db(session: Session, judge_filter=None, county_filter=None) -> pd.DataFrame:
     """
     Load data from the database with optional filters for judge and county.
 
@@ -90,8 +105,6 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
     from app.db.db_types import County, Judge
     from app.env import BASE_QUERY
 
-    logging.info("Loading data from database...")
-    # Start with a basic query
     # Start with a basic query
     query = BASE_QUERY
 
@@ -116,7 +129,7 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
         "pend_vfo", "judge_name", "median_household_income", "county_name",
     ])
 
-    logging.info("Data loading complete.")
+    logging.info("Data loading from database complete.")
     return df
 
 

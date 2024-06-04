@@ -5,8 +5,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sqlalchemy.orm import Session
 
-from .data import create_db_connection, split_data
-from .db.db_actions import load_data
+from .data import split_data, load_data
+from .db.db_actions import create_db_connection
 
 
 def convert_bail_amount(data):
@@ -68,8 +68,11 @@ def normalize_columns(columns_to_normalize, x):
 
 
 class Preprocessing:
-    def __init__(self, config, judge_filter=None, county_filter=None):
+    def __init__(self, source, config, judge_filter=None, county_filter=None):
         self.columns_to_normalize = ["median_income", "number_of_households", "population"]
+        self.filepath = "sources/exports/merged_data.csv"
+        self.outputs_dir = "outputs"
+        self.source = source if source in ["db", "csv"] else "csv"
         self.num_bins = 10
         self.imputation_strategy = "median"
         self.encoding_strategy = "label"
@@ -85,10 +88,10 @@ class Preprocessing:
 
     def load_and_preprocess_data(self):
         """Load and preprocess data."""
-        session = Session(self.engine)
-        data = load_data(session, self.judge_filter, self.county_filter)
+        session = Session(self.engine) if self.source == "db" else None
+        data = load_data(self.source, session, self.filepath, self.judge_filter, self.county_filter)
 
-        x, y, y_bin = self.preprocess_data(data, self.config.outputs_dir)
+        x, y, y_bin = self.preprocess_data(data, self.outputs_dir)
 
         x_column, _y_column, y_bin = separate_features_and_target(data)
 
@@ -98,7 +101,7 @@ class Preprocessing:
             self.label_encoders[feature] = LabelEncoder().fit(x_column[feature])
             x_column[feature] = self.label_encoders[feature].transform(x_column[feature])
 
-        x_train, y_train, x_test, y_test = split_data(x_column, y_bin, self.config.outputs_dir)
+        x_train, y_train, x_test, y_test = split_data(x_column, y_bin, self.outputs_dir)
         self.total_cases = len(data)
         self.num_features = x_column.shape[1]
         return data, x_train, y_train, x_test, y_test

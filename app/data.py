@@ -3,23 +3,40 @@ import os
 
 import pandas as pd
 from sklearn.model_selection import StratifiedShuffleSplit
-from sqlalchemy import Engine
-
-from app.db.db_actions import create_engine_connection
+from sqlalchemy.orm import Session
 
 
-def create_db_connection() -> Engine:
+def load_data(source: str = None, session: Session = None, file_path: str = None, judge_filter=None,
+              county_filter=None) -> pd.DataFrame:
     """
-    Create a connection to the database.
+    Load data from the specified source (either 'db' or 'csv').
 
-    :return: SQLAlchemy Engine.
+    Args:
+        source (str): The data source, either 'db' or 'csv'.
+        session (Session, optional): The SQLAlchemy session to use for the query. Required if source is 'db'.
+        file_path (str, optional): The path to the CSV file. Required if source is 'csv'.
+        judge_filter (str, optional): The name of the judge to filter by. Defaults to None.
+        county_filter (str, optional): The name of the county to filter by. Defaults to None.
+
+    Returns:
+        pd.DataFrame: The loaded data as a pandas DataFrame.
     """
-    user = os.environ.get("DB_USER")
-    password = os.environ.get("DB_PASSWORD")
-    host = os.environ.get("DB_HOST")
-    port = os.environ.get("DB_PORT")
-    dbname = os.environ.get("DB_NAME")
-    return create_engine_connection(user, password, host, port, dbname)
+
+    from .db.db_actions import load_data_from_db
+    from .csv_tools.csv_reader import load_data_from_csv
+    if source == 'db':
+        if session is None:
+            raise ValueError("Session is required when source is 'db'")
+        return load_data_from_db(session, judge_filter, county_filter)
+    elif source == 'csv':
+        return load_data_from_csv(file_path)
+    else:
+        raise ValueError("Invalid source. Use 'db' or 'csv'.")
+
+
+# Example usage
+# df = load_data('db', session=my_session, judge_filter='Judge A', county_filter='County X')
+# df = load_data('csv', file_path='path/to/file.csv')
 
 
 def save_preprocessed_data(x_data: pd.DataFrame, outputs_dir: str):

@@ -30,8 +30,9 @@ from .utils import (
 class ModelTrainer:
     """Model trainer class."""
 
-    def __init__(self, judge_filter=None, county_filter=None, quiet=False):
-        from .data import create_db_connection  # Import here to avoid circular import
+    def __init__(self, source="csv", judge_filter=None, county_filter=None, quiet=False):
+        from app import create_db_connection  # Import here to avoid circular import
+        self.source = source
         self.config = TrainerConfig()
         self.quiet = quiet
         self.session = Session(autocommit=False, autoflush=False, bind=create_db_connection())
@@ -40,7 +41,8 @@ class ModelTrainer:
         self.num_features = 0
         self.judge_filter = judge_filter
         self.county_filter = county_filter
-        self.model = None  # Initialize model as None
+        self.model = Model(model_type="gradient_boosting",
+                           good_hyperparameters=GOOD_HYPERPARAMETERS)  # Initialize model as None
         self.ensure_outputs_dir()
         logging.info("Initialized ModelTrainer")
 
@@ -115,8 +117,8 @@ class ModelTrainer:
 
     def train_model(self):
         """Train model"""
-        from .data import save_data, load_data  # Import here to avoid circular import
-        preprocessor = Preprocessing(self.config, self.judge_filter, self.county_filter)
+        from app import save_data, load_data  # Import here to avoid circular import
+        preprocessor = Preprocessing(self.config, self.source, self.judge_filter, self.county_filter)
         try:
             _, x_train, y_train, x_test, y_test = preprocessor.load_and_preprocess_data()
         except ValueError as e:
@@ -289,7 +291,6 @@ def grade_targets(session, trained_data, trained_model_path, target, limit=10):
 
         # Prepare the target data for prediction
         x_target = target_data.drop(columns=['first_bail_set_cash'])
-        target_data['first_bail_set_cash']
 
         # Preprocess the target data using the same preprocessing steps
         x_target = preprocessor.preprocess_new_data(x_target)
