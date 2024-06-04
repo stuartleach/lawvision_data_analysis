@@ -5,17 +5,29 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sqlalchemy.orm import Session
 
+from . import COLUMNS_OF_INTEREST
 from .data import split_data, load_data
 from .db.db_actions import create_db_connection
 
 
-def convert_bail_amount(data):
+def load_data_from_csv(file_path: str, dtype_dict=None) -> pd.DataFrame:
     """
-    Convert the bail amount column to numeric and rename it.
+    Load data from a CSV file with specified data types.
 
-    :param data: DataFrame containing the data
-    :return: DataFrame with the bail amount converted and renamed
+    Args:
+        file_path (str): The path to the CSV file.
+        dtype_dict (dict): A dictionary specifying data types for columns.
+
+    Returns:
+        pd.DataFrame: The data from the CSV file as a pandas DataFrame.
     """
+    logging.info(f"Loading data from CSV file: {file_path}")
+    df = pd.read_csv(file_path, low_memory=False, dtype=dtype_dict)
+    logging.info(f"Data loading from {file_path} complete. Shape: {df.shape}")
+    return df
+
+
+def convert_bail_amount(data):
     data["first_bail_set_cash"] = pd.to_numeric(data["first_bail_set_cash"], errors="coerce")
     data.rename(columns={"first_bail_set_cash": "bail_amount"}, inplace=True)
     logging.info("First few rows of data: %s", data.head())
@@ -136,14 +148,21 @@ class Preprocessing:
         bin_counts = data["bail_amount_bin"].value_counts()
         logging.info("Bin counts before adjustment: %s", bin_counts)
         bin_count_threshold = 2
+        min_bins = 3  # Minimum number of bins to consider
+
         while any(bin_counts < bin_count_threshold):
+            if self.num_bins <= min_bins:
+                logging.warning("Too few bins to meet the threshold. Adjusting to minimum bins.")
+                data["bail_amount_bin"] = pd.cut(data["bail_amount"], bins=min_bins, labels=False)
+                break
             self.num_bins -= 1
-            if self.num_bins < bin_count_threshold:
-                raise ValueError(
-                    "Cannot create bins with at least 2 samples each. Consider increasing the sample size.")
             data["bail_amount_bin"] = pd.cut(data["bail_amount"], bins=self.num_bins, labels=False)
             bin_counts = data["bail_amount_bin"].value_counts()
             logging.info("Adjusted bin counts: %s", bin_counts)
+
+        if self.num_bins < min_bins:
+            logging.error("Cannot create bins with at least 2 samples each. Consider increasing the sample size.")
+            raise ValueError("Cannot create bins with at least 2 samples each. Consider increasing the sample size.")
 
     def _encode_categorical_features(self, data):
         """
@@ -175,11 +194,12 @@ class Preprocessing:
         nan_count = y.isna().sum()
         logging.info("Number of NaN values in bail_amount: %s", nan_count)
         if nan_count > 0:
-            x = x[~y.isna()]
-            y = y[~y.isna()]
-            y_bin = y_bin[~y.isna()]
+            valid_indices = ~y.isna()
+            x = x[valid_indices]
+            y = y[valid_indices]
+            y_bin = y_bin[valid_indices]
             logging.info("Removed %s rows with NaN values in bail_amount.", nan_count)
-        x = pd.DataFrame(self.imputer.fit_transform(x), columns=x.columns)
+        x = pd.DataFrame(self.imputer.fit_transform(x), columns=x.columns, index=x.index)
         logging.info("Filled NaN values in features with column medians.")
         return x, y, y_bin
 
@@ -205,8 +225,57 @@ class Preprocessing:
         return data
 
 
-def load_data_from_csv(file_path: str) -> pd.DataFrame:
+def load_and_merge_data(base_dir="../../sources/exports"):
+    dtype_dict = {
+        'first_bail_set_cash': 'float64'
+    }
+
+    cases_df = load_data_from_csv(f'{base_dir}/cases_data.csv', dtype_dict=dtype_dict)
+    counties_df = load_data_from_csv(f'{base_dir}/counties_data.csv')
+    courts_df = load_data_from_csv(f'{base_dir}/courts_data.csv')
+    judges_df = load_data_from_csv(f'{base_dir}/judges_data.csv')
+    races_df = load_data_from_csv(f'{base_dir}/races_data.csv')
+    representations_df = load_data_from_csv(f'{base_dir}/representation_data.csv')
+
+    logging.info(f"cases_df columns: {cases_df.columns.tolist()}")
+    logging.info(f"races_df columns: {races_df.columns.tolist()}")
+    logging.info(f"courts_df columns: {courts_df.columns.tolist()}")
+    logging.info(f"judges_df columns: {judges_df.columns.tolist()}")
+    logging.info(f"representations_df columns: {representations_df.columns.tolist()}")
+    logging.info(f"counties_df columns: {counties_df.columns.tolist()}")
+
+    merged_df = pd.merge(cases_df, races_df, how='left', left_on='race_id', right_on='race_uuid')
+    logging.info(f"Merged cases with races. Shape: {merged_df.shape}")
+
+    merged_df = pd.merge(merged_df, courts_df, how='left', left_on='court_id', right_on='court_uuid',
+                         suffixes=('_cases', '_courts'))
+    logging.info(f"Merged with courts. Shape: {merged_df.shape}")
+
+    merged_df = pd.merge(merged_df, judges_df, how='left', left_on='judge_id', right_on='judge_uuid',
+                         suffixes=('', '_judges'))
+    logging.info(f"Merged with judges. Shape: {merged_df.shape}")
+
+    merged_df = pd.merge(merged_df, representations_df, how='left', left_on='representation_id',
+                         right_on='representation_uuid', suffixes=('', '_reps'))
+    logging.info(f"Merged with representations. Shape: {merged_df.shape}")
+
+    merged_df = pd.merge(merged_df, counties_df, how='left', left_on='county_id', right_on='county_uuid',
+                         suffixes=('', '_counties'))
+    logging.info(f"Merged with counties. Shape: {merged_df.shape}")
+
+    # result_df = merged_df[
+    #     ['internal_case_id', 'race_id', 'race_uuid', 'race', 'county_id', 'county_name', 'judge_name', 'court_name',
+    #      'representation_type', 'median_income']]
+
+    result_df = merged_df[COLUMNS_OF_INTEREST]
+
+    result_df.to_csv(f'{base_dir}/merged_data.csv', index=False)
+    logging.info(f"Exported merged data to {base_dir}/merged_data.csv. Shape: {result_df.shape}")
+
+
+# Updated `load_data_from_csv` function to include `dtype_dict`
+def load_data_from_csv(file_path: str, dtype_dict=None) -> pd.DataFrame:
     logging.info(f"Loading data from CSV file: {file_path}")
-    df = pd.read_csv(file_path, low_memory=False)
+    df = pd.read_csv(file_path, low_memory=False, dtype=dtype_dict)
     logging.info(f"Data loading from {file_path} complete. Shape: {df.shape}")
     return df

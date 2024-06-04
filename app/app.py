@@ -10,26 +10,35 @@ def run_model(source="csv", train=True, grade=False, trained_data_path="outputs/
     from .train import grade_targets
     from app import create_db_connection
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
-    if source == "db":
-        engine = create_db_connection()
-        session = Session(bind=engine)
-        general_trainer = ModelTrainer(source="db")
-        logging.info("Running the application using db...")
-    elif source == "csv":
-        session = None
-        general_trainer = ModelTrainer(source="csv")
-        logging.info("Running the application using csv...")
-    else:
-        raise ValueError("Invalid source provided. Please provide either 'db' or 'csv'.")
+    session = None
 
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
     if train:
-        # Train the general model
-        general_trainer.run()
-        # Save the trained data to a CSV file
-        general_trainer.save_trained_data(trained_data_path)
-        # Save the trained model to a file
-        general_trainer.model.save_model(trained_model_path)
+        logging.info("Training the model...")
+        if source == "db":
+            logging.info("Creating a database connection...")
+            engine = create_db_connection()
+            session = Session(bind=engine)
+            general_trainer = ModelTrainer(source="db")
+            general_trainer.run()
+            general_trainer.save_trained_data(trained_data_path)
+            general_trainer.model.save_model(trained_model_path)
+            logging.info("Running the application using db...")
+
+        elif source == "csv":
+            logging.info("No database connection required. Using CSV as the source.")
+            general_trainer = ModelTrainer(source="csv")
+            general_trainer.run()
+            logging.info("Saving the trained data and model...")
+            # general_trainer.save_trained_data(trained_data_path)
+            # general_trainer.model.save_model(trained_model_path)
+            logging.info("Running the application using csv...")
+        else:
+            raise ValueError("Invalid source provided. Please provide either 'db' or 'csv'.")
+
+    # Train the general model
+    # Save the trained data to a CSV file
+    # Save the trained model to a file
 
     # logging.info("general_trainer: %s", general_trainer)
 

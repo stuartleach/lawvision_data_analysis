@@ -44,5 +44,7 @@ def load_data_from_csv(file_path: str = "../../sources/exports/merged_data.csv")
     #     "pend_vfo", "judge_name", "median_household_income", "county_name",
     # ])
     df = pd.DataFrame(df, columns=COLUMNS_OF_INTEREST)
+    print("Columns of interest: ")
+    print(df.columns)
     logging.info("Data loading from CSV complete.")
     return df

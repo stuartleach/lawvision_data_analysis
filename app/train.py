@@ -231,6 +231,10 @@ class ModelTrainer:
 
     def save_trained_data(self, path):
         """Save the trained model data to a CSV file."""
+        # create csv if not exist
+        if not os.path.exists(path):
+            with open(path, 'w') as f:
+                f.write("model_target,model_type,average_bail_amount,r_squared,mean_squared_error\n")
         importance_df = pd.read_csv(os.path.join(self.config.outputs_dir, "feature_importance.csv"))
         importance_df.to_csv(path, index=False)
         logging.info(f"Trained data saved to {path}")
@@ -325,3 +329,10 @@ def train_model_for_each_judge(session):
             logging.info(f"Feature importances for judge {judge}: {feature_importances}")
         except ValueError as e:
             logging.error(f"Error in training model for judge {judge}: {e}")
+
+
+def load_data_from_csv(file_path: str, dtype_dict=None) -> pd.DataFrame:
+    logging.info(f"Loading data from CSV file: {file_path}")
+    df = pd.read_csv(file_path, low_memory=False, dtype=dtype_dict)
+    logging.info(f"Data loading from {file_path} complete. Shape: {df.shape}")
+    return df
