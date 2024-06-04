@@ -30,7 +30,7 @@ def hydrate_data():
     courts_df = load_data_from_csv(f'{BASEDIR}/courts_data.csv')
     judges_df = load_data_from_csv(f'{BASEDIR}/judges_data.csv')
     races_df = load_data_from_csv(f'{BASEDIR}/races_data.csv')
-    crimes_df = load_data_from_csv(f'{BASEDIR}/crimes_data.csv')
+    # crimes_df = load_data_from_csv(f'{BASEDIR}/crimes_data.csv')
     representations_df = load_data_from_csv(f'{BASEDIR}/representation_data.csv')
 
     # Print column names to verify keys
@@ -73,3 +73,14 @@ def hydrate_data():
     # Export the final DataFrame to CSV
     result_df.to_csv(f'{BASEDIR}/merged_data.csv', index=False)
     logging.info(f"Exported merged data to {BASEDIR}/merged_data.csv. Shape: {result_df.shape}")
+
+
+# print all columns from the merged data
+def print_columns():
+    df = load_data_from_csv(f'{BASEDIR}/merged_data.csv')
+    logging.info(f"Columns: {len(df.columns)}")
+    logging.info(f"Shape: {df.shape}")
+    return df
+
+
+# print_columns()
