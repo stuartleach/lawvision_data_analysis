@@ -155,7 +155,8 @@ class ModelTrainer:
                                                        outputs_dir=self.config.outputs_dir)
 
                     # Calculate and log SHAP values
-                    self.calculate_and_log_shap_values(self.model.manager.model, x_train_selected, x_test_selected)
+                    # TODO - Add a flag to enable/disable SHAP values calculation
+                    # self.calculate_and_log_shap_values(self.model.manager.model, x_train_selected, x_test_selected)
 
                     mlflow.log_metric("mse", mse)
                     mlflow.log_metric("r2", r2)

@@ -203,3 +203,10 @@ class Preprocessing:
                 data[column].fillna(data[column].median(), inplace=True)
 
         return data
+
+
+def load_data_from_csv(file_path: str) -> pd.DataFrame:
+    logging.info(f"Loading data from CSV file: {file_path}")
+    df = pd.read_csv(file_path, low_memory=False)
+    logging.info(f"Data loading from {file_path} complete. Shape: {df.shape}")
+    return df
