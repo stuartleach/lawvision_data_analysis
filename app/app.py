@@ -28,6 +28,7 @@ def run_model(source="csv", train=True, grade=False, trained_data_path="outputs/
         elif source == "csv":
             logging.info("No database connection required. Using CSV as the source.")
             general_trainer = ModelTrainer(source="csv")
+            # check if model trainer was created correctly
             general_trainer.run()
             logging.info("Saving the trained data and model...")
             general_trainer.save_trained_data(trained_data_path)
