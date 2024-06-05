@@ -67,7 +67,7 @@ class Preprocessing:
     def __init__(self, config, judge_filter=None, county_filter=None):
         self.columns_to_normalize = ["median_household_income", "known_days_in_custody", "age_at_arrest",
                                      "number_of_households", "population", "prior_misd_cnt", "prior_nonvfo_cnt"]
-        self.num_bins = 10
+        self.num_bins = 50
         self.imputation_strategy = "median"
         self.encoding_strategy = "label"
         self.label_encoders = {}
@@ -87,10 +87,11 @@ class Preprocessing:
 
         x_column, y, y_bin = self.preprocess_data(data, self.config.outputs_dir)  # Unpack the tuple and take only x
 
-        # x_column, _y_column, y_bin = separate_features_and_target(x)  # Pass x (features) to separate function
+        # save y to csv
+        y.to_csv(self.config.outputs_dir + "/y.csv", index=False)
 
         # Fit label encoders on training data
-        categorical_features = ['gender', 'ethnicity', 'judge_name', 'county_name']
+        categorical_features = ['gender', 'ethnicity', 'judge_name', 'county_name', 'top_charge_at_arraign']
         for feature in categorical_features:
             self.label_encoders[feature] = LabelEncoder().fit(x_column[feature])
             x_column[feature] = self.label_encoders[feature].transform(x_column[feature])
@@ -120,7 +121,7 @@ class Preprocessing:
         save_preprocessed_data(x, outputs_dir)
         return x, y, y_bin
 
-    def _create_bins(self, data):
+    def _create_bins(self, data, target="bail_amount"):
         """
         Create bins for the bail amount column.
 
