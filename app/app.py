@@ -30,17 +30,11 @@ def run_model(source="csv", train=True, grade=False, trained_data_path="outputs/
             general_trainer = ModelTrainer(source="csv")
             general_trainer.run()
             logging.info("Saving the trained data and model...")
-            # general_trainer.save_trained_data(trained_data_path)
-            # general_trainer.model.save_model(trained_model_path)
+            general_trainer.save_trained_data(trained_data_path)
+            general_trainer.model.save_model(trained_model_path)
             logging.info("Running the application using csv...")
         else:
             raise ValueError("Invalid source provided. Please provide either 'db' or 'csv'.")
-
-    # Train the general model
-    # Save the trained data to a CSV file
-    # Save the trained model to a file
-
-    # logging.info("general_trainer: %s", general_trainer)
 
     if grade:
         if not trained_data_path or not trained_model_path:

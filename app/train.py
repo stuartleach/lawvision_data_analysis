@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from . import load_data
 from .classes import TrainerConfig, model_config, ResultObject
 from .env import DISCORD_AVATAR_URL, DISCORD_WEBHOOK_URL, GOOD_HYPERPARAMETERS
 from .model import Model
@@ -315,20 +316,25 @@ def grade_targets(session, trained_data, trained_model_path, target, limit=10):
 
 
 def train_model_for_each_judge(session):
-    """Train a model for each judge."""
     judges = get_judges(session)
-    logging.info(f"Found {len(judges)} judges.")
+
+    # Step 1: Identify common features or create feature union
+    all_features = set()
+    for judge in judges:
+        data = load_data(session, judge_filter=judge)
+        all_features.update(data.columns)
+    common_features = list(all_features)  # Or create a feature union
 
     for judge in judges:
-        logging.info(f"Training model for judge: {judge}")
         trainer = ModelTrainer(judge_filter=judge)
-        try:
-            trainer.run()
-            # Save or log the feature importances for the judge
-            feature_importances = trainer.model.get_feature_importances()
-            logging.info(f"Feature importances for judge {judge}: {feature_importances}")
-        except ValueError as e:
-            logging.error(f"Error in training model for judge {judge}: {e}")
+        data = load_data(session, judge_filter=judge)
+
+        # Step 2: Ensure consistent feature set
+        data = data[common_features]  # Or use feature union
+
+        # Step 3: Preprocess and train
+        _, x_train, y_train, x_test, y_test = trainer.preprocess_data(data)
+        trainer.run()
 
 
 def load_data_from_csv(file_path: str, dtype_dict=None) -> pd.DataFrame:

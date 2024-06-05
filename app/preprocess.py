@@ -203,24 +203,24 @@ class Preprocessing:
         logging.info("Filled NaN values in features with column medians.")
         return x, y, y_bin
 
+        # In your Preprocessing class
+
     def preprocess_new_data(self, data):
-        """Apply the same preprocessing steps to new data."""
-        data = data.copy()
+        data = data.copy()[COLUMNS_OF_INTEREST]  # Ensure same columns as training
 
-        # Example preprocessing: label encoding for categorical features
-        categorical_features = ['gender', 'ethnicity', 'judge_name', 'county_name']
-        for feature in categorical_features:
-            if feature in self.label_encoders:
-                data[feature] = self.label_encoders[feature].transform(data[feature])
-            else:
-                # Fit encoder on new data if it wasn't fit during training
-                self.label_encoders[feature] = LabelEncoder().fit(data[feature])
-                data[feature] = self.label_encoders[feature].transform(data[feature])
+        # Apply label encoding consistently
+        for feature, encoder in self.label_encoders.items():
+            if feature in data.columns:
+                data[feature] = encoder.transform(data[feature])
 
-        # Fill missing values with column medians
-        for column in data.columns:
-            if data[column].isnull().any():
-                data[column].fillna(data[column].median(), inplace=True)
+                # Handle missing values or columns
+        data = data.fillna(self.imputer.statistics_)  # Impute with pre-fitted imputer
+        missing_cols = set(self.imputer.feature_names_in_) - set(data.columns)
+        for col in missing_cols:  # Add missing columns with imputed values
+            data[col] = self.imputer.statistics_[self.imputer.feature_names_in_ == col][0]
+
+        # Normalize consistently (if applicable)
+        # data[self.columns_to_normalize] = self.scaler.transform(data[self.columns_to_normalize])
 
         return data
 
