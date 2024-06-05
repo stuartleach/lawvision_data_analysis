@@ -83,10 +83,13 @@ class Preprocessing:
         """Load and preprocess data."""
         session = Session(self.engine)
         data = load_data(session, self.judge_filter, self.county_filter)
+        print("Data", data.head())
+        # print columns as list
+        print("Columns", list(data.columns))
 
-        data = self.preprocess_data(data, self.config.outputs_dir)
+        x, _, _ = self.preprocess_data(data, self.config.outputs_dir)  # Unpack the tuple and take only x
 
-        x_column, _y_column, y_bin = separate_features_and_target(data)
+        x_column, _y_column, y_bin = separate_features_and_target(x)  # Pass x (features) to separate function
 
         # Fit label encoders on training data
         categorical_features = ['gender', 'ethnicity', 'judge_name', 'county_name']

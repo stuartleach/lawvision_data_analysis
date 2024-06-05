@@ -47,7 +47,7 @@ def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.c
 
 
 def run():
-    run_model(train=False, grade=True)
+    run_model(train=True, grade=False)
 
 
 if __name__ == "__main__":
