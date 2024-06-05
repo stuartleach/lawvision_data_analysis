@@ -65,7 +65,8 @@ def normalize_columns(columns_to_normalize, x):
 
 class Preprocessing:
     def __init__(self, config, judge_filter=None, county_filter=None):
-        self.columns_to_normalize = ["median_income", "number_of_households", "population"]
+        self.columns_to_normalize = ["median_household_income", "known_days_in_custody", "age_at_arrest",
+                                     "number_of_households", "population", "prior_misd_cnt", "prior_nonvfo_cnt"]
         self.num_bins = 10
         self.imputation_strategy = "median"
         self.encoding_strategy = "label"
@@ -83,13 +84,10 @@ class Preprocessing:
         """Load and preprocess data."""
         session = Session(self.engine)
         data = load_data(session, self.judge_filter, self.county_filter)
-        print("Data", data.head())
-        # print columns as list
-        print("Columns", list(data.columns))
 
-        x, _, _ = self.preprocess_data(data, self.config.outputs_dir)  # Unpack the tuple and take only x
+        x_column, y, y_bin = self.preprocess_data(data, self.config.outputs_dir)  # Unpack the tuple and take only x
 
-        x_column, _y_column, y_bin = separate_features_and_target(x)  # Pass x (features) to separate function
+        # x_column, _y_column, y_bin = separate_features_and_target(x)  # Pass x (features) to separate function
 
         # Fit label encoders on training data
         categorical_features = ['gender', 'ethnicity', 'judge_name', 'county_name']
@@ -118,6 +116,7 @@ class Preprocessing:
         x, y, y_bin = separate_features_and_target(data)
         x, y, y_bin = self._handle_missing_values(x, y, y_bin)
         x = normalize_columns(self.columns_to_normalize, x)
+        print("normalized columns", x.columns)
         save_preprocessed_data(x, outputs_dir)
         return x, y, y_bin
 
