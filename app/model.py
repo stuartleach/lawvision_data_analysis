@@ -129,6 +129,10 @@ class RegressionModeler:
             raise
 
 
+def save_shap_values(shap_values, path):
+    np.save(path, shap_values)
+
+
 class Model:
     """Unified class to manage both regression and neural network models."""
 
@@ -138,13 +142,18 @@ class Model:
         self.manager = self._initialize_manager()
         self.outputs_dir = 'outputs'
 
-    def explain_predictions(self, x_data):
-        explainer = shap.TreeExplainer(self.manager.model, feature_perturbation="tree_path_dependent")
-        shap_values = explainer(x_data)
-        return shap_values
+    def explain_predictions(self, x_data, verbose=True):  # Add verbose parameter
+        logging.info("Starting SHAP value calculation...")
 
-    def save_shap_values(self, shap_values, path):
-        np.save(path, shap_values)
+        # Choose the appropriate explainer based on your model type
+        explainer = shap.TreeExplainer(self.manager.model, feature_perturbation="tree_path_dependent")
+
+        shap_values = explainer.shap_values(x_data)  # Use explainer.shap_values() directly
+
+        if verbose:  # Log progress only if verbose is True
+            logging.info("SHAP value calculation completed.")
+
+        return shap_values
 
     def get_shap_summary_plot(self, shap_values, features):
         mlflow.shap.summary_plot(shap_values, features, show=False)

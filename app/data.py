@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from alembic import command
 from alembic.config import Config
-from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
@@ -65,18 +65,15 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
         query = query.where(County.county_name == county_filter)
 
     # Execute the query
-    results = session.execute(query).fetchall()
+    results = session.execute(query)  # No need for fetchall() here
 
-    # Convert results to a pandas DataFrame
-    columns_of_interest = pd.DataFrame(results, columns=[
-        "gender", "ethnicity", "race", "age_at_arrest", "known_days_in_custody",
-        "top_charge_at_arraign", "first_bail_set_cash", "prior_vfo_cnt",
-        "prior_nonvfo_cnt", "prior_misd_cnt", "pend_nonvfo", "pend_misd",
-        "pend_vfo", "judge_name", "median_household_income", "county_name",
-    ])
+    # Convert results to a pandas DataFrame, infer column names from SQL query
+    data = pd.DataFrame(results.fetchall(), columns=results.keys())
+
+    # columns=results.keys() ensures that columns in the DataFrame match the query result columns.
 
     logging.info("Data loading complete.")
-    return columns_of_interest
+    return data
 
 
 def save_data(session: Session, result_object: ResultObject):
@@ -182,26 +179,36 @@ def save_split_data(x_train: pd.DataFrame, x_test: pd.DataFrame, outputs_dir: st
     x_test.to_csv(os.path.join(outputs_dir, "X_test.csv"), index=False)
 
 
-def split_data(x_bin: pd.DataFrame, y_bin: pd.DataFrame, outputs_dir: str):
+def split_data(x, y, outputs_dir):
     """
-    Split the data into training and test sets.
+    Split the data into training and test sets using stratified sampling.
 
-    :param x_bin: Feature data.
-    :param y_bin: Target data.
+    :param x: Feature data (DataFrame).
+    :param y: Target data (Series or DataFrame).
     :param outputs_dir: Directory to save the split data.
     :return: x_train, y_train, x_test, y_test
     """
-    x_train, y_train, x_test, y_test = None, None, None, None
+
+    x_test, x_train, y_test, y_train = None, None, None, None
     try:
         split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
-        for train_index, test_index in split.split(x_bin, y_bin):
-            x_train = x_bin.loc[train_index]
-            y_train = y_bin.loc[train_index]
-            x_test = x_bin.loc[test_index]
-            y_test = y_bin.loc[test_index]
+        for train_index, test_index in split.split(x, y):  # Use x and y directly
+            x_train = x.loc[train_index]
+            y_train = y.loc[train_index]
+            x_test = x.loc[test_index]
+            y_test = y.loc[test_index]
+
         logging.info("Data split into training and test sets (stratified).")
         save_split_data(x_train, x_test, outputs_dir)
-    except Exception as exception:
-        logging.error("Error splitting data: %s", exception)
-        raise
+
+    except ValueError as e:
+        if "The least populated class in y has only" in str(e):
+            logging.warning("Insufficient samples for stratified split. Performing random split instead.")
+            x_train, x_test, y_train, y_test = train_test_split(
+                x, y, test_size=0.2, random_state=42, stratify=y
+            )
+        else:
+            logging.error("Error splitting data: %s", e)
+            raise
+
     return x_train, y_train, x_test, y_test

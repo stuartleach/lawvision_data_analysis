@@ -185,7 +185,7 @@ def upgrade() -> None:
     sa.Column('race_importance', sa.Numeric(), nullable=True),
     sa.Column('age_at_arrest_importance', sa.Numeric(), nullable=True),
     sa.Column('known_days_in_custody_importance', sa.Numeric(), nullable=True),
-    sa.Column('top_charge_at_arraign_importance', sa.Numeric(), nullable=True),
+    # sa.Column('top_charge_at_arraign_importance', sa.Numeric(), nullable=True),
     sa.Column('first_bail_set_cash_importance', sa.Numeric(), nullable=True),
     sa.Column('prior_vfo_cnt_importance', sa.Numeric(), nullable=True),
     sa.Column('prior_nonvfo_cnt_importance', sa.Numeric(), nullable=True),

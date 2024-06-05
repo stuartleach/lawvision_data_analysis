@@ -62,9 +62,9 @@ HYPERPARAMETER_GRIDS = {
 GOOD_HYPERPARAMETERS = {
     "gradient_boosting": {
         "learning_rate": 0.2,
-        "max_depth": 4,
-        "min_samples_leaf": 4,
-        "n_estimators": 300,
+        "max_depth": 1,  # old 4
+        "min_samples_leaf": 2,  # old 4
+        "n_estimators": 100,  # old 300
     },
     "random_forest": {
         "bootstrap": False,
@@ -100,7 +100,7 @@ GOOD_HYPERPARAMETERS = {
 
 BAIL_THRESHOLD = 80000
 
-QUERY_LIMIT = 1500
+QUERY_LIMIT = 100500
 
 BASE_QUERY: Select = (
     select(
@@ -109,7 +109,9 @@ BASE_QUERY: Select = (
         Race.race,
         Case.age_at_arrest,
         Case.known_days_in_custody,
-        Case.top_charge_at_arraign,
+        # Case.top_charge_at_arraign,
+        Case.top_charge_weight_at_arraign,
+        Case.arraign_charge_category,
         Case.first_bail_set_cash,
         Case.prior_vfo_cnt,
         Case.prior_nonvfo_cnt,
@@ -131,5 +133,7 @@ BASE_QUERY: Select = (
     .where(
         Case.first_bail_set_cash.isnot(None),
         cast(Case.first_bail_set_cash, Numeric) < BAIL_THRESHOLD,
+        Case.top_charge_weight_at_arraign.is_not(None),
         cast(Case.first_bail_set_cash, Numeric) > 1
-    ))
+    )
+)

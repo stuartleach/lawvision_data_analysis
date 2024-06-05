@@ -135,7 +135,7 @@ class ModelTrainer:
                     #                         pd.DataFrame(x_test_selected, columns=x_train.columns),
                     #                         features=x_train.columns.tolist(),
                     #                         outputs_dir=self.config.outputs_dir)
-
+                    #
                     plot_file_path = self.plot_and_save_shap(self.model,
                                                              pd.DataFrame(x_test_selected, columns=x_train.columns))
                     mlflow.log_artifact(plot_file_path)

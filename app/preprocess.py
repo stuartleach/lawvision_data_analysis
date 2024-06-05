@@ -1,6 +1,8 @@
 import logging
+from typing import Tuple
 
 import pandas as pd
+import prettytable as pt
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sqlalchemy.orm import Session
@@ -35,17 +37,46 @@ def drop_list_columns(data):
     return data
 
 
-def separate_features_and_target(data):
+def separate_features_and_target(data, bail_binning=False, severity_binning=False) -> Tuple[
+    pd.DataFrame, pd.Series, pd.Series]:
     """
-    Separate features and target variables.
+    Separate features (X) and target variables (y and y_bin) based on binning flags.
 
     :param data: DataFrame containing the data
-    :return: DataFrames for features (x), target (y), and binned target (y_bin)
+    :param bail_binning: Whether to use binned bail amount as a target
+    :param severity_binning: Whether to use binned severity as a target
+    :return: features (X), target variables (y and y_bin)
     """
-    x = data.drop(columns=["bail_amount", "bail_amount_bin"])
-    y = data["bail_amount"]
-    y_bin = data["bail_amount_bin"]
-    return x, y, y_bin
+
+    columns_to_drop = []
+
+    # Conditional dropping of columns based on binning flags
+    if not bail_binning:
+        columns_to_drop.append("bail_amount_bin") if "bail_amount_bin" in data.columns else None
+    if not severity_binning:
+        columns_to_drop.extend(
+            ["severity_amount", "severity_amount_bin"]) if "severity_amount" in data.columns else None
+
+    # Check if columns exist before dropping (same as before)
+    for col in columns_to_drop:
+        if col not in data.columns:
+            logging.warning(f"Column '{col}' not found in data. Skipping...")
+            columns_to_drop.remove(col)
+
+    if columns_to_drop:
+        x = data.drop(columns=columns_to_drop)
+    else:
+        x = data.copy()
+
+    y = data["bail_amount"]  # Use raw values
+
+    # Add handling for severity target (if needed)
+    y_severity = None
+    if severity_binning:
+        y_severity = data["severity_bin"]
+    # ... (rest of the code if you want to return severity as a separate target)
+
+    return x, y, y_severity
 
 
 def normalize_columns(columns_to_normalize, x):
@@ -66,7 +97,8 @@ def normalize_columns(columns_to_normalize, x):
 class Preprocessing:
     def __init__(self, config, judge_filter=None, county_filter=None):
         self.columns_to_normalize = ["median_household_income", "known_days_in_custody", "age_at_arrest",
-                                     "number_of_households", "population", "prior_misd_cnt", "prior_nonvfo_cnt"]
+                                     "number_of_households", "population", "prior_misd_cnt", "prior_nonvfo_cnt",
+                                     ]
         self.num_bins = 50
         self.imputation_strategy = "median"
         self.encoding_strategy = "label"
@@ -81,47 +113,76 @@ class Preprocessing:
         self.county_filter = county_filter
 
     def load_and_preprocess_data(self):
-        """Load and preprocess data."""
+        """Load and preprocess data, printing initial values for verification."""
+
         session = Session(self.engine)
         data = load_data(session, self.judge_filter, self.county_filter)
 
-        x_column, y, y_bin = self.preprocess_data(data, self.config.outputs_dir)  # Unpack the tuple and take only x
+        # Check if columns exist in the loaded data
+        required_columns = ["top_charge_weight_at_arraign", "first_bail_set_cash"]
+        for col in required_columns:
+            if col not in data.columns:
+                raise ValueError(f"Required column '{col}' not found in loaded data.")
 
-        # save y to csv
-        y.to_csv(self.config.outputs_dir + "/y.csv", index=False)
+        # Display first 5 rows of relevant columns in a table
+        logging.info("First 5 rows of relevant columns:")
+        table = pt.PrettyTable()
+        table.field_names = required_columns
+        for _, row in data.head(5).iterrows():
+            table.add_row([row[col] for col in required_columns])
+        print(table)  # Print using 'print' for better formatting
 
-        # Fit label encoders on training data
-        categorical_features = ['gender', 'ethnicity', 'judge_name', 'county_name', 'top_charge_at_arraign']
-        for feature in categorical_features:
-            self.label_encoders[feature] = LabelEncoder().fit(x_column[feature])
-            x_column[feature] = self.label_encoders[feature].transform(x_column[feature])
+        # Continue with preprocessing as usual
+        x_column, y = self.preprocess_data(data, self.config.outputs_dir)
+        x_train, y_train, x_test, y_test = split_data(x_column, y, self.config.outputs_dir)
 
-        x_train, y_train, x_test, y_test = split_data(x_column, y_bin, self.config.outputs_dir)
         self.total_cases = len(data)
         self.num_features = x_column.shape[1]
         return data, x_train, y_train, x_test, y_test
 
-    def preprocess_data(self, data, outputs_dir):
+    def preprocess_data(self, data, outputs_dir, bail_binning=False, severity_binning=True):
         """
         Preprocess the input data.
-
-        :param data: DataFrame containing the data
-        :param outputs_dir: Directory to save preprocessed data
-        :return: DataFrames for features (x), target (y), and binned target (y_bin)
         """
         from .data import save_preprocessed_data
         data = convert_bail_amount(data)
-        self._create_bins(data)
         data = drop_list_columns(data)
+        bin_dictionary = {"I": 0.5, "V": 1, "BM": 2, "UM": 2.5, "AM": 3, "EF": 4, "DF": 5, "CF": 6, "BF": 7, "AF": 8}
+        unique_charges = data['top_charge_weight_at_arraign'].unique()
+        unmapped_charges = [charge for charge in unique_charges if charge not in bin_dictionary and pd.notna(charge)]
+        if unmapped_charges:
+            print(f"Unmapped values in 'top_charge_weight_at_arraign': {unmapped_charges}")
+            raise ValueError(f"Unmapped values in 'top_charge_weight_at_arraign': {unique_charges}")
+        print(data['top_charge_weight_at_arraign'].head(15))
         data = self._encode_categorical_features(data)
-        x, y, y_bin = separate_features_and_target(data)
-        x, y, y_bin = self._handle_missing_values(x, y, y_bin)
+
+        # Map top_charge_weight_at_arraign directly
+        data["top_charge_weight_at_arraign"] = data["top_charge_weight_at_arraign"].map(bin_dictionary)
+
+        x = data.drop(columns=["bail_amount"], errors='ignore')
+        y = data["bail_amount"]
+
+        x, y = self._handle_missing_values(x, y)
         x = normalize_columns(self.columns_to_normalize, x)
         print("normalized columns", x.columns)
         save_preprocessed_data(x, outputs_dir)
-        return x, y, y_bin
+        return x, y
 
-    def _create_bins(self, data, target="bail_amount"):
+    def _handle_missing_values(self, x, y):
+        """Handle missing values in the input data."""
+        # First impute missing values in y
+        y.fillna(y.median(), inplace=True)
+
+        # Drop rows where ALL columns in x are NaN
+        x = x.dropna(how='all')
+        y = y[x.index]  # Align y with the filtered x
+
+        # Impute remaining missing values in x
+        x = pd.DataFrame(self.imputer.fit_transform(x), columns=x.columns)
+
+        return x, y
+
+    def _create_bail_bins(self, data, target="bail_amount"):
         """
         Create bins for the bail amount column.
 
@@ -159,25 +220,27 @@ class Preprocessing:
             logging.info("Categorical features encoded with One-Hot Encoding.")
         return data
 
-    def _handle_missing_values(self, x, y, y_bin):
+    def _handle_missing_values(self, x, y):
         """
         Handle missing values in the input data.
-
-        :param x: DataFrame containing the features
-        :param y: DataFrame containing the target variable
-        :param y_bin: DataFrame containing the binned target variable
-        :return: DataFrames for features (x), target (y), and binned target (y_bin) with missing values handled
         """
-        nan_count = y.isna().sum()
-        logging.info("Number of NaN values in bail_amount: %s", nan_count)
-        if nan_count > 0:
-            x = x[~y.isna()]
-            y = y[~y.isna()]
-            y_bin = y_bin[~y.isna()]
-            logging.info("Removed %s rows with NaN values in bail_amount.", nan_count)
-        x = pd.DataFrame(self.imputer.fit_transform(x), columns=x.columns)
-        logging.info("Filled NaN values in features with column medians.")
-        return x, y, y_bin
+        # Impute missing values in bail_amount
+        y.fillna(y.median(), inplace=True)
+
+        # Drop rows where ALL columns in x are NaN
+        x = x.dropna(how='all')
+        y = y[x.index]  # Align y with the filtered x
+
+        # Exclude top_charge_weight_at_arraign from imputation
+        x_to_impute = x.drop(columns=['top_charge_weight_at_arraign'], errors='ignore')
+
+        # Impute remaining missing values in x (excluding 'top_charge_weight_at_arraign')
+        x_to_impute = pd.DataFrame(self.imputer.fit_transform(x_to_impute), columns=x_to_impute.columns)
+
+        # Concatenate the imputed features back with 'top_charge_weight_at_arraign'
+        x = pd.concat([x_to_impute, x[['top_charge_weight_at_arraign']]], axis=1)
+
+        return x, y
 
     def preprocess_new_data(self, data):
         """Apply the same preprocessing steps to new data."""
