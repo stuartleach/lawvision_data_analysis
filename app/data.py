@@ -52,7 +52,6 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
     logging.info("Loading data from database...")
 
     # Start with a basic query
-    # Start with a basic query
     query = BASE_QUERY
 
     # Apply judge filter if provided
@@ -69,7 +68,7 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
     results = session.execute(query).fetchall()
 
     # Convert results to a pandas DataFrame
-    df = pd.DataFrame(results, columns=[
+    columns_of_interest = pd.DataFrame(results, columns=[
         "gender", "ethnicity", "race", "age_at_arrest", "known_days_in_custody",
         "top_charge_at_arraign", "first_bail_set_cash", "prior_vfo_cnt",
         "prior_nonvfo_cnt", "prior_misd_cnt", "pend_nonvfo", "pend_misd",
@@ -77,7 +76,7 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
     ])
 
     logging.info("Data loading complete.")
-    return df
+    return columns_of_interest
 
 
 def save_data(session: Session, result_object: ResultObject):
