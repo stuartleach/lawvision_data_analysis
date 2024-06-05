@@ -42,6 +42,15 @@ class ModelTrainer:
         self.ensure_outputs_dir()
         logging.info("Initialized ModelTrainer")
 
+    def plot_and_save_shap(self, model, X):
+        logging.info("Plotting and saving SHAP values.")
+        shap_values = model.explain_predictions(X)
+        logging.info("SHAP values: %s", shap_values)
+        model.save_shap_values(shap_values, os.path.join(self.config.outputs_dir, "shap_values.npy"))
+        plot_file_path = model.get_shap_summary_plot(shap_values, X)
+        mlflow.log_artifact(plot_file_path)
+        return plot_file_path
+
     def ensure_outputs_dir(self):
         """Ensure that the outputs directory exists."""
         if not os.path.exists(self.config.outputs_dir):
@@ -122,10 +131,14 @@ class ModelTrainer:
                                            self.config.outputs_dir)
 
                     # Plot Partial Dependence
-                    self.model.plot_partial_dependence(pd.DataFrame(x_test_selected, columns=x_train.columns),
-                                                       features=x_train.columns.tolist(),
-                                                       outputs_dir=self.config.outputs_dir)
+                    # plot_partial_dependence(self.model.manager.model,
+                    #                         pd.DataFrame(x_test_selected, columns=x_train.columns),
+                    #                         features=x_train.columns.tolist(),
+                    #                         outputs_dir=self.config.outputs_dir)
 
+                    plot_file_path = self.plot_and_save_shap(self.model,
+                                                             pd.DataFrame(x_test_selected, columns=x_train.columns))
+                    mlflow.log_artifact(plot_file_path)
                     mlflow.log_metric("mse", mse)
                     mlflow.log_metric("r2", r2)
 

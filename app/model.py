@@ -3,11 +3,13 @@
 import logging
 import os
 
-import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
+import numpy as np
 import pandas as pd
+import shap
 from joblib import dump, load
+from matplotlib import pyplot as plt
 from sklearn.ensemble import (
     AdaBoostRegressor,
     BaggingRegressor,
@@ -16,7 +18,6 @@ from sklearn.ensemble import (
     HistGradientBoostingRegressor,
     RandomForestRegressor,
 )
-from sklearn.inspection import PartialDependenceDisplay
 from sklearn.linear_model import Lasso, Ridge
 from sklearn.metrics import mean_squared_error, r2_score
 
@@ -109,17 +110,6 @@ class RegressionModeler:
 
         logging.info("Feature importances: \n%s", importance)
 
-    def plot_partial_dependence(self, x, features, outputs_dir):
-        """Plot partial dependence for the given features."""
-        _, ax = plt.subplots(figsize=(12, 8))
-        PartialDependenceDisplay.from_estimator(self.model, x, features=features).plot(
-            ax=ax
-        )
-        pdp_file_path = os.path.join(outputs_dir, "partial_dependence.png")
-        plt.savefig(pdp_file_path)
-        logging.info("Partial Dependence Plot saved as '%s'", pdp_file_path)
-        plt.show()
-
     def save_model(self, path):
         """Save the model to the given path."""
         try:
@@ -146,6 +136,19 @@ class Model:
         self.model_type = model_type
         self.good_hyperparameters = good_hyperparameters
         self.manager = self._initialize_manager()
+        self.outputs_dir = 'outputs'
+
+    def explain_predictions(self, x_data):
+        explainer = shap.TreeExplainer(self.manager.model, feature_perturbation="tree_path_dependent")
+        shap_values = explainer(x_data)
+        return shap_values
+
+    def save_shap_values(self, shap_values, path):
+        np.save(path, shap_values)
+
+    def get_shap_summary_plot(self, shap_values, features):
+        mlflow.shap.summary_plot(shap_values, features, show=False)
+        plt.savefig(os.path.join(self.outputs_dir, "shap_summary_plot.png"))
 
     def _initialize_manager(self):
         return RegressionModeler(self.model_type, self.good_hyperparameters)
@@ -164,9 +167,6 @@ class Model:
 
     def log_metrics(self, mse, r2, x, outputs_dir):
         self.manager.log_metrics(mse, r2, x, outputs_dir)
-
-    def plot_partial_dependence(self, x, features, outputs_dir):
-        self.manager.plot_partial_dependence(x, features, outputs_dir)
 
     def save_model(self, path):
         self.manager.save_model(path)

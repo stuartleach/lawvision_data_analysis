@@ -6,8 +6,10 @@ import re
 from dataclasses import dataclass
 
 import pandas as pd
+import plotly.express as px
 import seaborn as sns
 from matplotlib import pyplot as plt
+from sklearn.inspection import PartialDependenceDisplay
 
 
 def sanitize_metric_name(name):
@@ -114,6 +116,64 @@ class PlotParams:
     r2_comparison: str
     elapsed_time: float
     model_info: dict
+
+
+def plot_partial_dependence(model, X, features, outputs_dir):
+    """
+    Plots partial dependence plots for the given features using Plotly and Matplotlib.
+
+    Args:
+        model: The trained model object.
+        X: The dataset used for model training.
+        features: A list of feature names for which to plot partial dependence.
+        outputs_dir: Directory to save the plot.
+    """
+
+    pdp_data = PartialDependenceDisplay.from_estimator(model, X, features=features, kind="average")
+
+    df_list = []
+
+    for i, feature in enumerate(features):
+        # Create a dataframe from the Bunch object
+        df = pd.DataFrame({
+            'values': pdp_data.pd_results[i]['values'][0],
+            'average': pdp_data.pd_results[i]['average'][0],
+            'feature': feature,  # Add the feature name directly
+        })
+        df_list.append(df)
+
+    # Concatenate the dataframes into a single dataframe
+    df = pd.concat(df_list, ignore_index=True)
+
+    # Plotly Interactive Plot
+    fig = px.line(
+        df,  # Use the modified dataframe with the 'feature' column
+        x="values",
+        y="average",
+        color="feature",
+        line_dash="feature",
+        title="Partial Dependence Plot (Interactive - Plotly)"
+    )
+
+    # Display and save Plotly plot
+    fig.show()
+    plotly_filename = os.path.join(outputs_dir, "partial_dependence_interactive.html")
+    fig.write_html(plotly_filename)
+    logging.info("Interactive Plotly PDP saved as '%s'", plotly_filename)
+
+    # Matplotlib Static Plot (for potential use in reports, presentations, etc.)
+    plt.figure(figsize=(12, 8))  # Adjust size as needed
+    pdp_data.plot()
+    plt.title("Partial Dependence Plot (Static - Matplotlib)")
+    plt.xlabel("Feature Value")
+    plt.ylabel("Average Marginal Effect")
+    plt.tight_layout()
+
+    # Display and save Matplotlib plot
+    plt.show()
+    matplotlib_filename = os.path.join(outputs_dir, "partial_dependence_static.png")
+    plt.savefig(matplotlib_filename)
+    logging.info("Static Matplotlib PDP saved as '%s'", matplotlib_filename)
 
 
 def plot_feature_importance(importance_df, outputs_dir, plot_params: PlotParams, judge_filter: str = None,
