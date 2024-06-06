@@ -89,6 +89,7 @@ def normalize_columns(columns_to_normalize, x):
     """
     for column in columns_to_normalize:
         if column in x.columns:
+            # print numbers of members in column
             x[column] = StandardScaler().fit_transform(x[[column]])
             logging.info("Normalized %s column.", column)
     return x
@@ -130,7 +131,6 @@ class Preprocessing:
         table.field_names = required_columns
         for _, row in data.head(5).iterrows():
             table.add_row([row[col] for col in required_columns])
-        print(table)  # Print using 'print' for better formatting
 
         # Continue with preprocessing as usual
         x_column, y = self.preprocess_data(data, self.config.outputs_dir)
@@ -151,9 +151,7 @@ class Preprocessing:
         unique_charges = data['top_charge_weight_at_arraign'].unique()
         unmapped_charges = [charge for charge in unique_charges if charge not in bin_dictionary and pd.notna(charge)]
         if unmapped_charges:
-            print(f"Unmapped values in 'top_charge_weight_at_arraign': {unmapped_charges}")
             raise ValueError(f"Unmapped values in 'top_charge_weight_at_arraign': {unique_charges}")
-        print(data['top_charge_weight_at_arraign'].head(15))
         data = self._encode_categorical_features(data)
 
         # Map top_charge_weight_at_arraign directly
@@ -164,7 +162,6 @@ class Preprocessing:
 
         x, y = self._handle_missing_values(x, y)
         x = normalize_columns(self.columns_to_normalize, x)
-        print("normalized columns", x.columns)
         save_preprocessed_data(x, outputs_dir)
         return x, y
 

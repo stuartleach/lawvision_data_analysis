@@ -102,8 +102,6 @@ def save_data(session: Session, result_object: ResultObject):
     # Assuming `data` is a pandas DataFrame containing the importance values
     dataframe = dataframe.to_dict(orient="records")
 
-    print(dataframe)
-
     if judge_filter:
         model_target_type = 'judge_name'
         model_target = judge_filter
@@ -116,11 +114,8 @@ def save_data(session: Session, result_object: ResultObject):
 
     new_result = Result()
     for row in dataframe:
-        print(row)
         row_feature = row.get('Feature')
         row_importance = row.get('Importance')
-        print("Row Feature: ", row_feature)
-        print("Row Importance: ", row_importance)
         # new_result[row_feature] = row_importance
         new_result.__setattr__(row_feature + "_importance", row_importance)
 

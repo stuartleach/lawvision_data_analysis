@@ -33,13 +33,7 @@ def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.c
 
         # Load the trained data from the CSV file
         trained_data = pd.read_csv(trained_data_path)
-        print("trained_data", trained_data)
-        for column in ["model_target", "model_type"]:
-            print("column", column)
 
-        for row in trained_data.iterrows():
-            print("row", row)
-        # Grade counties using the trained model
         grade_targets(session, trained_data, trained_model_path, "judge")
 
     # Close the session

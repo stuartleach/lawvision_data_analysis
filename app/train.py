@@ -104,8 +104,6 @@ class ModelTrainer:
             logging.error(f"Error in preprocessing data: {e}")
             return
 
-        print("Head of each preprocessed: ", x_train.head(), y_train.head(), x_test.head(), y_test.head())
-
         self.total_cases = preprocessor.total_cases
         self.num_features = preprocessor.num_features
 
