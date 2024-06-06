@@ -331,3 +331,6 @@ zipp==3.18.2
     # via
     #   importlib-metadata
     #   importlib-resources
+
+plotly~=5.22.0
+prettytable~=3.10.0
