@@ -118,18 +118,18 @@ class PlotParams:
     model_info: dict
 
 
-def plot_partial_dependence(model, X, features, outputs_dir):
+def plot_partial_dependence(model, x, features, outputs_dir):
     """
     Plots partial dependence plots for the given features using Plotly and Matplotlib.
 
     Args:
         model: The trained model object.
-        X: The dataset used for model training.
+        x: The dataset used for model training.
         features: A list of feature names for which to plot partial dependence.
         outputs_dir: Directory to save the plot.
     """
 
-    pdp_data = PartialDependenceDisplay.from_estimator(model, X, features=features, kind="average")
+    pdp_data = PartialDependenceDisplay.from_estimator(model, x, features=features, kind="average")
 
     df_list = []
 
