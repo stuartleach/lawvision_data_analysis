@@ -16,15 +16,10 @@ def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.c
     engine = create_db_connection()
     session = Session(bind=engine)
 
-    general_trainer = None
-
     if train:
-        # Train the general model
-        general_trainer = ModelTrainer()
+        general_trainer = ModelTrainer(county_filter="", judge_filter="")
         general_trainer.run()
-        # Save the trained data to a CSV file
         general_trainer.save_trained_data(trained_data_path)
-        # Save the trained model to a file
         general_trainer.model.save_model(trained_model_path)
 
     if grade:

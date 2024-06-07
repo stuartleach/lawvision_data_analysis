@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from alembic import command
 from alembic.config import Config
-from sklearn.model_selection import StratifiedShuffleSplit, train_test_split
+from sklearn.model_selection import StratifiedShuffleSplit
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
@@ -69,6 +69,13 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
 
     # Convert results to a pandas DataFrame, infer column names from SQL query
     data = pd.DataFrame(results.fetchall(), columns=results.keys())
+
+    # if judge filter is on, drop the judge_name column
+    if judge_filter:
+        data = data.drop(columns=['judge_name'])
+    # if county filter is on, drop the county_name column
+    if county_filter:
+        data = data.drop(columns=['county_name', 'median_household_income'])
 
     # columns=results.keys() ensures that columns in the DataFrame match the query result columns.
 
@@ -174,36 +181,24 @@ def save_split_data(x_train: pd.DataFrame, x_test: pd.DataFrame, outputs_dir: st
     x_test.to_csv(os.path.join(outputs_dir, "X_test.csv"), index=False)
 
 
-def split_data(x, y, outputs_dir):
-    """
-    Split the data into training and test sets using stratified sampling.
+def split_data(x, y, outputs_dir, test_size=0.2, random_state=None, shuffle=True):
+    """Split the data into training and test sets using stratified sampling on binned bail amounts."""
+    x_train, x_test, y_train, y_test = None, None, None, None
 
-    :param x: Feature data (DataFrame).
-    :param y: Target data (Series or DataFrame).
-    :param outputs_dir: Directory to save the split data.
-    :return: x_train, y_train, x_test, y_test
-    """
+    # Create bins and assign bin labels to 'y'
+    y_bins = pd.cut(y.copy(), bins=20, labels=False)
 
-    x_test, x_train, y_test, y_train = None, None, None, None
+    # Stratify on binned bail amounts
     try:
-        split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
-        for train_index, test_index in split.split(x, y):  # Use x and y directly
-            x_train = x.loc[train_index]
-            y_train = y.loc[train_index]
-            x_test = x.loc[test_index]
-            y_test = y.loc[test_index]
+        split = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
+        for train_index, test_index in split.split(x, y_bins):
+            x_train, x_test = x.loc[train_index], x.loc[test_index]
+            y_train, y_test = y.loc[train_index], y.loc[test_index]
 
-        logging.info("Data split into training and test sets (stratified).")
-        save_split_data(x_train, x_test, outputs_dir)
+        logging.info(f"Data split into training and test sets (stratified on bins) with test_size={test_size}.")
+    except Exception as e:
+        logging.error("An unexpected error occurred during data splitting: %s", e)
+        raise
 
-    except ValueError as e:
-        if "The least populated class in y has only" in str(e):
-            logging.warning("Insufficient samples for stratified split. Performing random split instead.")
-            x_train, x_test, y_train, y_test = train_test_split(
-                x, y, test_size=0.2, random_state=42, stratify=y
-            )
-        else:
-            logging.error("Error splitting data: %s", e)
-            raise
-
+    save_split_data(x_train, x_test, outputs_dir)
     return x_train, y_train, x_test, y_test

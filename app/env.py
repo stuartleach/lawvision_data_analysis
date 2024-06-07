@@ -62,9 +62,9 @@ HYPERPARAMETER_GRIDS = {
 GOOD_HYPERPARAMETERS = {
     "gradient_boosting": {
         "learning_rate": 0.2,
-        "max_depth": 1,  # old 4
-        "min_samples_leaf": 2,  # old 4
-        "n_estimators": 100,  # old 300
+        "max_depth": 4,  # old 4
+        "min_samples_leaf": 4,  # old 4
+        "n_estimators": 300,  # old 300
     },
     "random_forest": {
         "bootstrap": False,
@@ -98,9 +98,9 @@ GOOD_HYPERPARAMETERS = {
     },
 }
 
-BAIL_THRESHOLD = 80000
+BAIL_THRESHOLD = 39000
 
-QUERY_LIMIT = 100500
+QUERY_LIMIT = 2000
 
 BASE_QUERY: Select = (
     select(
@@ -111,7 +111,7 @@ BASE_QUERY: Select = (
         Case.known_days_in_custody,
         # Case.top_charge_at_arraign,
         Case.top_charge_weight_at_arraign,
-        Case.arraign_charge_category,
+        # Case.arraign_charge_category,
         Case.first_bail_set_cash,
         Case.prior_vfo_cnt,
         Case.prior_nonvfo_cnt,

@@ -134,9 +134,9 @@ class ModelTrainer:
                     #                         features=x_train.columns.tolist(),
                     #                         outputs_dir=self.config.outputs_dir)
                     #
-                    plot_file_path = self.plot_and_save_shap(self.model,
-                                                             pd.DataFrame(x_test_selected, columns=x_train.columns))
-                    mlflow.log_artifact(plot_file_path)
+                    # plot_file_path = self.plot_and_save_shap(self.model,
+                    #                                          pd.DataFrame(x_test_selected, columns=x_train.columns))
+                    # mlflow.log_artifact(plot_file_path)
                     mlflow.log_metric("mse", mse)
                     mlflow.log_metric("r2", r2)
 
@@ -165,6 +165,7 @@ class ModelTrainer:
 
             # Ensure 'first_bail_set_cash' is numeric
             df['first_bail_set_cash'] = pd.to_numeric(df['first_bail_set_cash'], errors='coerce')
+
 
             average_bail_amount = df['first_bail_set_cash'].mean()
 
@@ -276,7 +277,7 @@ def grade_targets(session, trained_data, trained_model_path, target, limit=10):
         x_target = preprocessor.preprocess_new_data(x_target)
 
         # Load the pre-trained model
-        trained_model = Model(model_type='gradient_boosting', good_hyperparameters=GOOD_HYPERPARAMETERS)
+        trained_model = Model(model_type='random_forest', good_hyperparameters=GOOD_HYPERPARAMETERS)
         trained_model.load_model(trained_model_path)
 
         # Apply the pre-trained model to the target's data to generate predictions
