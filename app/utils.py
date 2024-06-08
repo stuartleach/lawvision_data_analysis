@@ -6,7 +6,6 @@ import re
 from dataclasses import dataclass
 
 import pandas as pd
-import plotly.express as px
 import seaborn as sns
 from matplotlib import pyplot as plt
 from sklearn.inspection import PartialDependenceDisplay
@@ -145,29 +144,14 @@ def plot_partial_dependence(model, x, features, outputs_dir):
     # Concatenate the dataframes into a single dataframe
     df = pd.concat(df_list, ignore_index=True)
 
-    # Plotly Interactive Plot
-    fig = px.line(
-        df,  # Use the modified dataframe with the 'feature' column
-        x="values",
-        y="average",
-        color="feature",
-        line_dash="feature",
-        title="Partial Dependence Plot (Interactive - Plotly)"
-    )
-
-    # Display and save Plotly plot
-    fig.show()
-    plotly_filename = os.path.join(outputs_dir, "partial_dependence_interactive.html")
-    fig.write_html(plotly_filename)
-    logging.info("Interactive Plotly PDP saved as '%s'", plotly_filename)
-
     # Matplotlib Static Plot (for potential use in reports, presentations, etc.)
     plt.figure(figsize=(12, 8))  # Adjust size as needed
     pdp_data.plot()
     plt.title("Partial Dependence Plot (Static - Matplotlib)")
     plt.xlabel("Feature Value")
     plt.ylabel("Average Marginal Effect")
-    plt.tight_layout()
+    plt.title("Partial Dependence Plot (Static - Matplotlib)")
+    # plt.layo()
 
     # Display and save Matplotlib plot
     plt.show()

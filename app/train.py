@@ -21,7 +21,7 @@ from .utils import (
     plot_feature_importance,
     read_previous_r2,
     save_importance_profile,
-    write_current_r2,
+    write_current_r2, plot_partial_dependence,
 )
 
 
@@ -129,14 +129,14 @@ class ModelTrainer:
                                            self.config.outputs_dir)
 
                     # Plot Partial Dependence
-                    # plot_partial_dependence(self.model.manager.model,
-                    #                         pd.DataFrame(x_test_selected, columns=x_train.columns),
-                    #                         features=x_train.columns.tolist(),
-                    #                         outputs_dir=self.config.outputs_dir)
-                    #
-                    # plot_file_path = self.plot_and_save_shap(self.model,
-                    #                                          pd.DataFrame(x_test_selected, columns=x_train.columns))
-                    # mlflow.log_artifact(plot_file_path)
+                    plot_partial_dependence(self.model.manager.model,
+                                            pd.DataFrame(x_test_selected, columns=x_train.columns),
+                                            features=x_train.columns.tolist(),
+                                            outputs_dir=self.config.outputs_dir)
+
+                    plot_file_path = self.plot_and_save_shap(self.model,
+                                                             pd.DataFrame(x_test_selected, columns=x_train.columns))
+                    mlflow.log_artifact(plot_file_path)
                     mlflow.log_metric("mse", mse)
                     mlflow.log_metric("r2", r2)
 
@@ -165,7 +165,6 @@ class ModelTrainer:
 
             # Ensure 'first_bail_set_cash' is numeric
             df['first_bail_set_cash'] = pd.to_numeric(df['first_bail_set_cash'], errors='coerce')
-
 
             average_bail_amount = df['first_bail_set_cash'].mean()
 

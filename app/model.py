@@ -129,10 +129,6 @@ class RegressionModeler:
             raise
 
 
-def save_shap_values(shap_values, path):
-    np.save(path, shap_values)
-
-
 class Model:
     """Unified class to manage both regression and neural network models."""
 
@@ -141,6 +137,9 @@ class Model:
         self.good_hyperparameters = good_hyperparameters
         self.manager = self._initialize_manager()
         self.outputs_dir = 'outputs'
+
+    def save_shap_values(self, shap_values, path):
+        np.save(path, shap_values)
 
     def explain_predictions(self, x_data, verbose=True):  # Add verbose parameter
         logging.info("Starting SHAP value calculation...")
