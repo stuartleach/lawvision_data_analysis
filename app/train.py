@@ -128,7 +128,6 @@ class ModelTrainer:
                     self.model.log_metrics(mse, r2, pd.DataFrame(x_train_selected, columns=x_train.columns),
                                            self.config.outputs_dir)
 
-                    # Plot Partial Dependence
                     plot_partial_dependence(self.model.manager.model,
                                             pd.DataFrame(x_test_selected, columns=x_train.columns),
                                             features=x_train.columns.tolist(),
