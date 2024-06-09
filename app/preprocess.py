@@ -122,7 +122,6 @@ class Preprocessing:
         session = Session(self.engine)
         data = load_data(session, self.judge_filter, self.county_filter)
 
-        # Check if columns exist in the loaded data
         required_columns = ["top_charge_weight_at_arraign", "first_bail_set_cash"]
         for col in required_columns:
             if col not in data.columns:
@@ -130,7 +129,6 @@ class Preprocessing:
 
         x_column, y = self.preprocess_data(data, self.config.outputs_dir)
 
-        # Split data and unpack all returned values
         x_train, y_train, x_test, y_test = split_data(x_column, y, self.config.outputs_dir)
 
         self.total_cases = len(data)
@@ -146,13 +144,11 @@ class Preprocessing:
 
         data = drop_list_columns(data)
 
-        # Correctly unpack the results of _handle_missing_values
         data, y = _handle_missing_values(data, data["bail_amount"])
 
-        # Map top_charge_weight_at_arraign and fill NaN with 0
         severity_dictionary = {"I": 0.5, "V": 1, "BM": 2, "UM": 2.5, "AM": 3, "EF": 4, "DF": 5, "CF": 6, "BF": 7,
                                "AF": 8}
-        if 'top_charge_weight_at_arraign' in data.columns:  # Check if column exists
+        if 'top_charge_weight_at_arraign' in data.columns:
             data["top_charge_weight_at_arraign"] = data["top_charge_weight_at_arraign"].map(
                 severity_dictionary).fillna(0)
 
@@ -161,14 +157,12 @@ class Preprocessing:
         # scale from 0 to 1
         data["bail_amount"] = data["bail_amount"] / data["bail_amount"].max()
 
-        # print numbers of members in each bin
         logging.info("Number of members in each bin: %s", data["top_charge_weight_at_arraign"].value_counts())
 
         x, y = separate_features_and_target(data, bail_binning=False)
 
         y.to_csv(os.path.join(outputs_dir, "y.csv"), index=False)
 
-        # Normalize
         x = normalize_columns(self.columns_to_normalize, x)
 
         save_preprocessed_data(x, outputs_dir)
@@ -216,17 +210,14 @@ class Preprocessing:
         """Apply the same preprocessing steps to new data."""
         data = data.copy()
 
-        # Example preprocessing: label encoding for categorical features
         categorical_features = ['gender', 'ethnicity', 'judge_name', 'county_name', 'top_charge_weight_at_arraign']
         for feature in categorical_features:
             if feature in self.label_encoders:
                 data[feature] = self.label_encoders[feature].transform(data[feature])
             else:
-                # Fit encoder on new data if it wasn't fit during training
                 self.label_encoders[feature] = LabelEncoder().fit(data[feature])
                 data[feature] = self.label_encoders[feature].transform(data[feature])
 
-        # Fill missing values with column medians
         for column in data.columns:
             if data[column].isnull().any():
                 data[column].fillna(data[column].median(), inplace=True)

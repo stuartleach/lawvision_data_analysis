@@ -40,7 +40,7 @@ def tablify(data, headers=None):
     table.field_names = headers or data.columns
     for row in data.itertuples(index=False):
         table.add_row(row)
-        logging.info("Table created from data. %s", table)
+    logging.info("Table created from data. %s", table)
     return table
 
 

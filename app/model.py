@@ -141,15 +141,14 @@ class Model:
     def save_shap_values(self, shap_values, path):
         np.save(path, shap_values)
 
-    def explain_predictions(self, x_data, verbose=True):  # Add verbose parameter
+    def explain_predictions(self, x_data, verbose=True):
         logging.info("Starting SHAP value calculation...")
 
-        # Choose the appropriate explainer based on your model type
         explainer = shap.TreeExplainer(self.manager.model, feature_perturbation="tree_path_dependent")
 
-        shap_values = explainer.shap_values(x_data)  # Use explainer.shap_values() directly
+        shap_values = explainer.shap_values(x_data)
 
-        if verbose:  # Log progress only if verbose is True
+        if verbose:
             logging.info("SHAP value calculation completed.")
 
         return shap_values

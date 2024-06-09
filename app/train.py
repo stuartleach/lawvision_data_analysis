@@ -21,7 +21,7 @@ from .utils import (
     plot_feature_importance,
     read_previous_r2,
     save_importance_profile,
-    write_current_r2, plot_partial_dependence,
+    write_current_r2, plot_partial_dependence, tablify,
 )
 
 

@@ -8,11 +8,9 @@ from .train import ModelTrainer, grade_targets
 
 def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.csv",
               trained_model_path="outputs/trained_model.joblib"):
+    from .data import create_db_connection
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
     logging.info("Running the application...")
-    from .data import create_db_connection
-
-    # Create a database connection and session
     engine = create_db_connection()
     session = Session(bind=engine)
 
@@ -25,13 +23,8 @@ def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.c
     if grade:
         if not trained_data_path or not trained_model_path:
             raise ValueError("No trained data or model path provided for grading.")
-
-        # Load the trained data from the CSV file
         trained_data = pd.read_csv(trained_data_path)
-
         grade_targets(session, trained_data, trained_model_path, "judge")
-
-    # Close the session
     session.close()
 
 

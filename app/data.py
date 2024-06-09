@@ -52,28 +52,21 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
     """
     logging.info("Loading data from database...")
 
-    # Start with a basic query
     query = BASE_QUERY
 
-    # Apply judge filter if provided
     if judge_filter:
         logging.info(f"Applying judge filter: {judge_filter}")
         query = query.where(Judge.judge_name == judge_filter)
-    # Apply county filter if provided
     if county_filter:
         logging.info(f"Applying county filter: {county_filter}")
         query = query.where(County.county_name == county_filter)
 
-    # Execute the query
     results = session.execute(query)  # No need for fetchall() here
 
-    # Convert results to a pandas DataFrame, infer column names from SQL query
     data = pd.DataFrame(results.fetchall(), columns=results.keys())
     tablify(data.head(10))
-    # if judge filter is on, drop the judge_name column
     if judge_filter:
         data = data.drop(columns=['judge_name'])
-    # if county filter is on, drop the county_name column
     if county_filter:
         data = data.drop(columns=['county_name', 'median_household_income'])
 
@@ -103,7 +96,6 @@ def save_data(session: Session, result_object: ResultObject):
     judge_filter = result_object.judge_filter
     county_filter = result_object.county_filter
 
-    # Assuming `data` is a pandas DataFrame containing the importance values
     dataframe = dataframe.to_dict(orient="records")
 
     if judge_filter:
@@ -120,7 +112,7 @@ def save_data(session: Session, result_object: ResultObject):
     for row in dataframe:
         row_feature = row.get('Feature')
         row_importance = row.get('Importance')
-        # new_result[row_feature] = row_importance
+        new_result[row_feature] = row_importance   #
         new_result.__setattr__(row_feature + "_importance", row_importance)
 
     new_result.__setattr__('model_params', model_params)
@@ -130,7 +122,7 @@ def save_data(session: Session, result_object: ResultObject):
     new_result.__setattr__('model_type', model_type)
     new_result.__setattr__('model_target_type', model_target_type)
     new_result.__setattr__('model_target', model_target)
-    # new_result.model_target = model_target
+    new_result.model_target = model_target   #
 
     session.add(new_result)
 
