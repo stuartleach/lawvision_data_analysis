@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from .db_types import County, Judge, Result
 from .env import BASE_QUERY
 from .train import ResultObject
+from .utils import tablify
 
 
 def create_engine_connection(user: str, password: str, host: str, port: str, dbname: str) -> Engine:
@@ -58,7 +59,6 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
     if judge_filter:
         logging.info(f"Applying judge filter: {judge_filter}")
         query = query.where(Judge.judge_name == judge_filter)
-
     # Apply county filter if provided
     if county_filter:
         logging.info(f"Applying county filter: {county_filter}")
@@ -69,7 +69,7 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
 
     # Convert results to a pandas DataFrame, infer column names from SQL query
     data = pd.DataFrame(results.fetchall(), columns=results.keys())
-
+    tablify(data.head(10))
     # if judge filter is on, drop the judge_name column
     if judge_filter:
         data = data.drop(columns=['judge_name'])
@@ -77,9 +77,6 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
     if county_filter:
         data = data.drop(columns=['county_name', 'median_household_income'])
 
-    # columns=results.keys() ensures that columns in the DataFrame match the query result columns.
-
-    logging.info("Data loading complete.")
     return data
 
 
@@ -181,14 +178,12 @@ def save_split_data(x_train: pd.DataFrame, x_test: pd.DataFrame, outputs_dir: st
     x_test.to_csv(os.path.join(outputs_dir, "X_test.csv"), index=False)
 
 
-def split_data(x, y, outputs_dir, test_size=0.2, random_state=None, shuffle=True):
+def split_data(x, y, outputs_dir, test_size=0.2, random_state=None):
     """Split the data into training and test sets using stratified sampling on binned bail amounts."""
     x_train, x_test, y_train, y_test = None, None, None, None
 
-    # Create bins and assign bin labels to 'y'
     y_bins = pd.cut(y.copy(), bins=20, labels=False)
 
-    # Stratify on binned bail amounts
     try:
         split = StratifiedShuffleSplit(n_splits=1, test_size=test_size, random_state=random_state)
         for train_index, test_index in split.split(x, y_bins):

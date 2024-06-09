@@ -1,8 +1,8 @@
 import logging
+import os
 from typing import Tuple
 
 import pandas as pd
-import prettytable as pt
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sqlalchemy.orm import Session
@@ -62,7 +62,6 @@ def normalize_columns(columns_to_normalize, x):
     """
     for column in columns_to_normalize:
         if column in x.columns:
-            # print numbers of members in column
             x[column] = StandardScaler().fit_transform(x[[column]])
             logging.info("Normalized %s column.", column)
     return x
@@ -82,10 +81,8 @@ def _handle_missing_values(x, y):
     numeric_cols = x.select_dtypes(include=['number'])
     categorical_cols = x.select_dtypes(exclude=['number'])
 
-    # Impute numerical columns with median
     if not numeric_cols.empty:
-        # imputer_numeric = SimpleImputer(strategy='median')
-        imputer_numeric = SimpleImputer(strategy='mean')
+        imputer_numeric = SimpleImputer(strategy='median')
         numeric_cols = pd.DataFrame(imputer_numeric.fit_transform(numeric_cols),
                                     columns=numeric_cols.columns)
 
@@ -104,7 +101,7 @@ def _handle_missing_values(x, y):
 class Preprocessing:
     def __init__(self, config, judge_filter=None, county_filter=None):
         self.columns_to_normalize = ["median_household_income", "known_days_in_custody", "age_at_arrest",
-                                     "number_of_households", "population", "prior_misd_cnt", "prior_nonvfo_cnt",
+                                     "number_of_households", "population", "prior_misd_cnt", "prior_nonvfo_cnt"
                                      ]
         self.num_bins = 10
         self.imputation_strategy = "median"
@@ -125,24 +122,12 @@ class Preprocessing:
         session = Session(self.engine)
         data = load_data(session, self.judge_filter, self.county_filter)
 
-        # bail_amount_threshold = data["first_bail_set_cash"].quantile(0.99)  # 99th percentile
-        # data = data[data["first_bail_set_cash"] <= bail_amount_threshold]
-
         # Check if columns exist in the loaded data
         required_columns = ["top_charge_weight_at_arraign", "first_bail_set_cash"]
         for col in required_columns:
             if col not in data.columns:
                 raise ValueError(f"Required column '{col}' not found in loaded data.")
 
-        # Display first 5 rows of relevant columns in a table
-        logging.info("First 5 rows of relevant columns:")
-        table = pt.PrettyTable()
-        table.field_names = required_columns
-        for _, row in data.head(5).iterrows():
-            table.add_row([row[col] for col in required_columns])
-        print(table)
-
-        # Continue with preprocessing as usual
         x_column, y = self.preprocess_data(data, self.config.outputs_dir)
 
         # Split data and unpack all returned values
@@ -168,22 +153,20 @@ class Preprocessing:
         severity_dictionary = {"I": 0.5, "V": 1, "BM": 2, "UM": 2.5, "AM": 3, "EF": 4, "DF": 5, "CF": 6, "BF": 7,
                                "AF": 8}
         if 'top_charge_weight_at_arraign' in data.columns:  # Check if column exists
-            print("column exists")
-            print(data["top_charge_weight_at_arraign"].value_counts())
             data["top_charge_weight_at_arraign"] = data["top_charge_weight_at_arraign"].map(
                 severity_dictionary).fillna(0)
 
         data = self._encode_categorical_features(data)
+        data["bail_amount"] = StandardScaler(with_mean=False).fit_transform(data[["bail_amount"]])
+        # scale from 0 to 1
+        data["bail_amount"] = data["bail_amount"] / data["bail_amount"].max()
 
         # print numbers of members in each bin
         logging.info("Number of members in each bin: %s", data["top_charge_weight_at_arraign"].value_counts())
 
-        # Create Bins (if requested)
-        if bail_binning:
-            self._create_bail_bins(data)
+        x, y = separate_features_and_target(data, bail_binning=False)
 
-        # Separate Features and Target
-        x, y = separate_features_and_target(data, bail_binning)
+        y.to_csv(os.path.join(outputs_dir, "y.csv"), index=False)
 
         # Normalize
         x = normalize_columns(self.columns_to_normalize, x)

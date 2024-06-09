@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass
 
 import pandas as pd
+import prettytable as pt
 import seaborn as sns
 from matplotlib import pyplot as plt
 from sklearn.inspection import PartialDependenceDisplay
@@ -18,6 +19,29 @@ def sanitize_metric_name(name):
     :return:
     """
     return re.sub(r"[^a-zA-Z0-9_\- .]", "_", name)
+
+
+def tablify(data, headers=None):
+    """Create a table from the data.
+
+    :param data: pandas.DataFrame:
+    :param headers:
+    :return:
+    """
+
+    # if type is a series, convert to dataframe
+    if isinstance(data, pd.Series):
+        data = pd.DataFrame(data).T
+
+    elif not isinstance(data, pd.DataFrame):
+        raise ValueError("Data must be a pandas DataFrame or Series")
+
+    table = pt.PrettyTable()
+    table.field_names = headers or data.columns
+    for row in data.itertuples(index=False):
+        table.add_row(row)
+        logging.info("Table created from data. %s", table)
+    return table
 
 
 def compare_r2(previous_r2, average_r2):

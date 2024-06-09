@@ -42,12 +42,12 @@ class ModelTrainer:
         self.ensure_outputs_dir()
         logging.info("Initialized ModelTrainer")
 
-    def plot_and_save_shap(self, model, X):
+    def plot_and_save_shap(self, model, x):
         logging.info("Plotting and saving SHAP values.")
-        shap_values = model.explain_predictions(X)
+        shap_values = model.explain_predictions(x)
         logging.info("SHAP values: %s", shap_values)
         model.save_shap_values(shap_values, os.path.join(self.config.outputs_dir, "shap_values.npy"))
-        plot_file_path = model.get_shap_summary_plot(shap_values, X)
+        plot_file_path = model.get_shap_summary_plot(shap_values, x)
         mlflow.log_artifact(plot_file_path)
         return plot_file_path
 

@@ -134,6 +134,7 @@ BASE_QUERY: Select = (
         Case.first_bail_set_cash.isnot(None),
         cast(Case.first_bail_set_cash, Numeric) < BAIL_THRESHOLD,
         Case.top_charge_weight_at_arraign.is_not(None),
-        cast(Case.first_bail_set_cash, Numeric) > 1
+        cast(Case.first_bail_set_cash, Numeric) > 1,
+        cast(Case.known_days_in_custody, Numeric) < 100,  # Get rid of outliers
     )
 )
