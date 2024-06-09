@@ -135,7 +135,7 @@ class Preprocessing:
         self.num_features = x_column.shape[1]
         return data, x_train, y_train, x_test, y_test
 
-    def preprocess_data(self, data, outputs_dir, bail_binning=True):
+    def preprocess_data(self, data, outputs_dir):
         from .data import save_preprocessed_data
 
         data = convert_bail_amount(data)
