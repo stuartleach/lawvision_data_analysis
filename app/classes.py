@@ -33,12 +33,15 @@ query_params = QueryParams(
 @dataclass
 class ModelType:
     """Enum-like class for model types (using strings for simplicity)."""
-    GRADIENT_BOOSTING: str = "gradient_boosting"
-    RANDOM_FOREST: str = "random_forest"
-    HIST_GRADIENT_BOOSTING: str = "hist_gradient_boosting"
-    ADA_BOOST: str = "ada_boost"
-    BAGGING: str = "bagging"
-    EXTRA_TREES: str = "extra_trees"
+    gradient_boosting: str = "gradient_boosting"
+    random_forest: str = "random_forest"
+    hist_gradient_boosting: str = "hist_gradient_boosting"
+    ada_boost: str = "ada_boost"
+    bagging: str = "bagging"
+    extra_trees: str = "extra_trees"
+
+
+model_type = ModelType()
 
 
 @dataclass
@@ -55,7 +58,7 @@ class ModelConfig:
 
 
 model_config = ModelConfig(
-    model_types=["random_forest", "gradient_boosting"],
+    model_types=[model_type.gradient_boosting],
     tune_hyperparameters=False,
     query_params=query_params,
 )

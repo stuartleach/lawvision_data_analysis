@@ -68,7 +68,8 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
     if judge_filter:
         data = data.drop(columns=['judge_name'])
     if county_filter:
-        data = data.drop(columns=['county_name', 'median_household_income'])
+        # data = data.drop(columns=['county_name', 'median_household_income'])
+        print(county_filter)
 
     return data
 
@@ -96,6 +97,8 @@ def save_data(session: Session, result_object: ResultObject):
     judge_filter = result_object.judge_filter
     county_filter = result_object.county_filter
 
+    tablify(dataframe.head(10))
+
     dataframe = dataframe.to_dict(orient="records")
 
     if judge_filter:
@@ -109,10 +112,11 @@ def save_data(session: Session, result_object: ResultObject):
         model_target_type = 'baseline'
 
     new_result = Result()
+
     for row in dataframe:
         row_feature = row.get('Feature')
         row_importance = row.get('Importance')
-        new_result[row_feature] = row_importance   #
+        new_result[row_feature] = row_importance  #
         new_result.__setattr__(row_feature + "_importance", row_importance)
 
     new_result.__setattr__('model_params', model_params)
@@ -122,7 +126,7 @@ def save_data(session: Session, result_object: ResultObject):
     new_result.__setattr__('model_type', model_type)
     new_result.__setattr__('model_target_type', model_target_type)
     new_result.__setattr__('model_target', model_target)
-    new_result.model_target = model_target   #
+    new_result.model_target = model_target  #
 
     session.add(new_result)
 

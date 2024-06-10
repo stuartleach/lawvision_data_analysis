@@ -121,6 +121,7 @@ class Preprocessing:
 
         session = Session(self.engine)
         data = load_data(session, self.judge_filter, self.county_filter)
+        self.total_cases = len(data)
 
         required_columns = ["top_charge_weight_at_arraign", "first_bail_set_cash"]
         for col in required_columns:
@@ -128,12 +129,14 @@ class Preprocessing:
                 raise ValueError(f"Required column '{col}' not found in loaded data.")
 
         x_column, y = self.preprocess_data(data, self.config.outputs_dir)
+        return data, x_column, y
+
+    def prepare_for_training(self, x_column, y):
 
         x_train, y_train, x_test, y_test = split_data(x_column, y, self.config.outputs_dir)
 
-        self.total_cases = len(data)
         self.num_features = x_column.shape[1]
-        return data, x_train, y_train, x_test, y_test
+        return x_train, y_train, x_test, y_test
 
     def preprocess_data(self, data, outputs_dir):
         from .data import save_preprocessed_data

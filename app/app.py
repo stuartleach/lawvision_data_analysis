@@ -15,10 +15,13 @@ def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.c
     session = Session(bind=engine)
 
     if train:
-        general_trainer = ModelTrainer(county_filter="", judge_filter="")
-        general_trainer.run()
-        general_trainer.save_trained_data(trained_data_path)
-        general_trainer.model.save_model(trained_model_path)
+        trainer = ModelTrainer(county_filter="", judge_filter="", quiet=True)
+        trainer.run()
+        trainer.save_trained_data(trained_data_path)
+        trainer.model.save_model(trained_model_path)
+
+        predictions = trainer.predict_for_county("Kings")
+        print(predictions[['first_bail_set_cash', 'predicted_bail_amount', 'difference']])
 
     if grade:
         if not trained_data_path or not trained_model_path:

@@ -5,11 +5,8 @@ import os
 
 import mlflow
 import mlflow.sklearn
-import numpy as np
 import pandas as pd
-import shap
 from joblib import dump, load
-from matplotlib import pyplot as plt
 from sklearn.ensemble import (
     AdaBoostRegressor,
     BaggingRegressor,
@@ -62,6 +59,14 @@ class RegressionModeler:
             logging.info("%s model training completed.", self.model_type)
         except Exception as e:
             logging.error("Error training model %s: %s", self.model_type, e)
+            raise
+
+    def predict(self, x_test):
+        """Predict the target variable using the given test data."""
+        try:
+            return self.model.predict(x_test)
+        except Exception as e:
+            logging.error("Error predicting with model %s: %s", self.model_type, e)
             raise
 
     def evaluate(self, x_test, y_test):
@@ -138,25 +143,6 @@ class Model:
         self.manager = self._initialize_manager()
         self.outputs_dir = 'outputs'
 
-    def save_shap_values(self, shap_values, path):
-        np.save(path, shap_values)
-
-    def explain_predictions(self, x_data, verbose=True):
-        logging.info("Starting SHAP value calculation...")
-
-        explainer = shap.TreeExplainer(self.manager.model, feature_perturbation="tree_path_dependent")
-
-        shap_values = explainer.shap_values(x_data)
-
-        if verbose:
-            logging.info("SHAP value calculation completed.")
-
-        return shap_values
-
-    def get_shap_summary_plot(self, shap_values, features):
-        mlflow.shap.summary_plot(shap_values, features, show=False)
-        plt.savefig(os.path.join(self.outputs_dir, "shap_summary_plot.png"))
-
     def _initialize_manager(self):
         return RegressionModeler(self.model_type, self.good_hyperparameters)
 
@@ -165,6 +151,9 @@ class Model:
 
     def evaluate(self, x_test, y_test):
         return self.manager.evaluate(x_test, y_test)
+
+    def predict(self, x_test):
+        return self.manager.predict(x_test)
 
     def apply(self, new_data):
         return self.manager.apply(new_data)

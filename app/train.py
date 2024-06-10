@@ -21,7 +21,8 @@ from .utils import (
     plot_feature_importance,
     read_previous_r2,
     save_importance_profile,
-    write_current_r2, plot_partial_dependence,
+    write_current_r2,
+    plot_partial_dependence, tablify,
 )
 
 
@@ -39,6 +40,7 @@ class ModelTrainer:
         self.judge_filter = judge_filter
         self.county_filter = county_filter
         self.model = None  # Initialize model as None
+        self.feature_names = None  # To store feature names after training
         self.ensure_outputs_dir()
         logging.info("Initialized ModelTrainer")
 
@@ -94,12 +96,38 @@ class ModelTrainer:
             raise KeyError(f"Column '{column}' not found in data.")
         return data[column].unique()
 
+    def predict_for_county(self, county_name):
+        """
+        Predict bail amounts for cases in a specified county using the trained model.
+
+        :param county_name: Name of the county to filter the data for.
+        :return: DataFrame with actual, predicted bail amounts, and their differences.
+        """
+        preprocessor = Preprocessing(self.config, self.judge_filter, self.county_filter)
+        df, x_column, y = preprocessor.load_and_preprocess_data()
+        df_county = df[df['county_name'] == county_name]
+
+        tablify(df_county.head(5))
+        print(x_column)
+        predicted_bail_amounts = self.model.predict(x_column)
+        tablify(df_county.head(5))
+        print(predicted_bail_amounts[:5])
+
+        # Add the predicted bail amounts to the DataFrame
+        df_county['predicted_bail_amount'] = predicted_bail_amounts
+
+        # Calculate the difference between actual and predicted bail amounts
+        df_county['difference'] = df_county['bail_amount'] - df_county['predicted_bail_amount']
+
+        return df_county
+
     def train_model(self):
         """Train model"""
-        from .data import save_data, load_data  # Import here to avoid circular import
+        from .data import load_data  # Import here to avoid circular import
         preprocessor = Preprocessing(self.config, self.judge_filter, self.county_filter)
         try:
-            _, x_train, y_train, x_test, y_test = preprocessor.load_and_preprocess_data()
+            data, x_column, y = preprocessor.load_and_preprocess_data()
+            x_train, y_train, x_test, y_test = preprocessor.prepare_for_training(x_column, y)
         except ValueError as e:
             logging.error(f"Error in preprocessing data: {e}")
             return
@@ -123,6 +151,9 @@ class ModelTrainer:
 
                     self.model.train(x_train_selected, y_train)
 
+                    # Store feature names after training
+                    self.feature_names = x_train_selected.columns
+
                     mse, r2 = self.model.evaluate(x_test_selected, y_test)
                     model_r2_scores.append(r2)
                     self.model.log_metrics(mse, r2, pd.DataFrame(x_train_selected, columns=x_train.columns),
@@ -132,10 +163,9 @@ class ModelTrainer:
                                             pd.DataFrame(x_test_selected, columns=x_train.columns),
                                             features=x_train.columns.tolist(),
                                             outputs_dir=self.config.outputs_dir)
-
-                    plot_file_path = self.plot_and_save_shap(self.model,
-                                                             pd.DataFrame(x_test_selected, columns=x_train.columns))
-                    mlflow.log_artifact(plot_file_path)
+                    # plot_file_path = self.plot_and_save_shap(self.model,
+                    #                                          pd.DataFrame(x_test_selected, columns=x_train.columns))
+                    # mlflow.log_artifact(plot_file_path)
                     mlflow.log_metric("mse", mse)
                     mlflow.log_metric("r2", r2)
 
@@ -183,7 +213,8 @@ class ModelTrainer:
 
             plot_file_path = self.plot_and_save_importance(self.model.manager.model, plot_params)
 
-            save_data(self.session, result_obj)
+            # don't save results data to the database for now
+            # save_data(self.session, result_obj)
 
             performance_data = {
                 "average_r2": average_r2,
@@ -249,7 +280,8 @@ def grade_targets(session, trained_data, trained_model_path, target, limit=10):
 
     preprocessor = Preprocessing(TrainerConfig())
     try:
-        _, x_train, y_train, x_test, y_test = preprocessor.load_and_preprocess_data()
+        data, x_column, y = preprocessor.load_and_preprocess_data()
+        x_train, y_train, x_test, y_test = preprocessor.prepare_for_training(x_column, y)
     except ValueError as e:
         logging.error(f"Error in preprocessing data: {e}")
         return
