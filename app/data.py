@@ -64,7 +64,6 @@ def load_data(session: Session, judge_filter=None, county_filter=None) -> pd.Dat
     results = session.execute(query)  # No need for fetchall() here
 
     data = pd.DataFrame(results.fetchall(), columns=results.keys())
-    tablify(data.head(10))
     if judge_filter:
         data = data.drop(columns=['judge_name'])
     if county_filter:

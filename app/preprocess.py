@@ -128,7 +128,7 @@ class Preprocessing:
             if col not in data.columns:
                 raise ValueError(f"Required column '{col}' not found in loaded data.")
 
-        x_column, y = self.preprocess_data(data, self.config.outputs_dir)
+        data, x_column, y = self.preprocess_data(data, self.config.outputs_dir)
         return data, x_column, y
 
     def prepare_for_training(self, x_column, y):
@@ -156,11 +156,9 @@ class Preprocessing:
                 severity_dictionary).fillna(0)
 
         data = self._encode_categorical_features(data)
-        data["bail_amount"] = StandardScaler(with_mean=False).fit_transform(data[["bail_amount"]])
+        # data["bail_amount"] = StandardScaler(with_mean=False).fit_transform(data[["bail_amount"]])
         # scale from 0 to 1
-        data["bail_amount"] = data["bail_amount"] / data["bail_amount"].max()
-
-        logging.info("Number of members in each bin: %s", data["top_charge_weight_at_arraign"].value_counts())
+        # data["bail_amount"] = data["bail_amount"] / data["bail_amount"].max()
 
         x, y = separate_features_and_target(data, bail_binning=False)
 
@@ -169,7 +167,7 @@ class Preprocessing:
         x = normalize_columns(self.columns_to_normalize, x)
 
         save_preprocessed_data(x, outputs_dir)
-        return x, y
+        return data, x, y
 
     def _create_bail_bins(self, data, target="bail_amount"):
         """

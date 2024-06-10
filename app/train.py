@@ -22,7 +22,7 @@ from .utils import (
     read_previous_r2,
     save_importance_profile,
     write_current_r2,
-    plot_partial_dependence, tablify,
+    plot_partial_dependence,
 )
 
 
@@ -103,23 +103,28 @@ class ModelTrainer:
         :param county_name: Name of the county to filter the data for.
         :return: DataFrame with actual, predicted bail amounts, and their differences.
         """
+        # Load and preprocess data
         preprocessor = Preprocessing(self.config, self.judge_filter, self.county_filter)
-        df, x_column, y = preprocessor.load_and_preprocess_data()
+        df, X, y = preprocessor.load_and_preprocess_data()
+
+        # Filter data for the specified county
         df_county = df[df['county_name'] == county_name]
+        # X_county = X[df['county_name'] == county_name]
 
-        tablify(df_county.head(5))
-        print(x_column)
-        predicted_bail_amounts = self.model.predict(x_column)
-        tablify(df_county.head(5))
-        print(predicted_bail_amounts[:5])
+        print("FEATURE NAMES: ", self.feature_names)
 
-        # Add the predicted bail amounts to the DataFrame
+        # Ensure feature names match those used during training
+        # X_county = X_county[self.feature_names]
+
+        # Predict bail amounts for the county's cases using the trained model
+        predicted_bail_amounts = self.model.predict(df_county[self.feature_names])
+
         df_county['predicted_bail_amount'] = predicted_bail_amounts
 
         # Calculate the difference between actual and predicted bail amounts
         df_county['difference'] = df_county['bail_amount'] - df_county['predicted_bail_amount']
 
-        return df_county
+        return df_county[['bail_amount', 'predicted_bail_amount', 'difference']]
 
     def train_model(self):
         """Train model"""

@@ -21,7 +21,8 @@ def run_model(train=True, grade=False, trained_data_path="outputs/trained_data.c
         trainer.model.save_model(trained_model_path)
 
         predictions = trainer.predict_for_county("Kings")
-        print(predictions[['first_bail_set_cash', 'predicted_bail_amount', 'difference']])
+        # print(predictions[['first_bail_set_cash', 'predicted_bail_amount', 'difference']])
+        predictions.to_csv("outputs/predictions.csv", index=False)
 
     if grade:
         if not trained_data_path or not trained_model_path:

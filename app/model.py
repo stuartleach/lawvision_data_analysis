@@ -61,7 +61,7 @@ class RegressionModeler:
             logging.error("Error training model %s: %s", self.model_type, e)
             raise
 
-    def predict(self, x_test):
+    def predict(self, x_test) -> list:
         """Predict the target variable using the given test data."""
         try:
             return self.model.predict(x_test)
