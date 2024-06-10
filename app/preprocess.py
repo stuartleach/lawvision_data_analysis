@@ -8,6 +8,7 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sqlalchemy.orm import Session
 
 from .data import create_db_connection, load_data, split_data
+from .utils import get_average_bail, tablify
 
 
 def convert_bail_amount(data):
@@ -122,6 +123,9 @@ class Preprocessing:
         session = Session(self.engine)
         data = load_data(session, self.judge_filter, self.county_filter)
         self.total_cases = len(data)
+
+        avg_bail_per_judge = get_average_bail(data)
+        tablify(avg_bail_per_judge)
 
         required_columns = ["top_charge_weight_at_arraign", "first_bail_set_cash"]
         for col in required_columns:

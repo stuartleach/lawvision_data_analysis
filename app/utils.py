@@ -21,6 +21,63 @@ def sanitize_metric_name(name):
     return re.sub(r"[^a-zA-Z0-9_\- .]", "_", name)
 
 
+def get_average_bail(df: pd.DataFrame) -> pd.DataFrame:
+    """Calculates the average bail amount per judge, filtering for those with at least 10 entries.
+
+    Args:
+        df (pd.DataFrame): DataFrame with columns 'judge_name' and 'first_bail_set_cash'.
+
+    Returns:
+        pd.DataFrame: Sorted DataFrame with 'judge_name' and 'average_bail'.
+    """
+    # Filtering and type conversion as before (NaNs and to numeric)
+    df_filtered = df.dropna(subset=['first_bail_set_cash'])
+    df_filtered['first_bail_set_cash'] = pd.to_numeric(df_filtered['first_bail_set_cash'], errors='coerce')
+
+    # bail counts per judge
+    bail_counts = df_filtered['judge_name'].value_counts().reset_index()
+
+    # create dataframe with case_count on x axis and frequency of that amount on y axis
+    hist_df = bail_counts['judge_name'].value_counts().reset_index()
+
+    # convert bail_counts to dataframe
+    bail_counts.columns = ['judge_name', 'bail_count']
+    # tablify(bail_counts, headers=['Judge Name', 'Bail Count'])
+    plot_bail_counts(bail_counts)
+
+    # Filter judges with at least 10 entries
+    average_bails = (
+        df_filtered.groupby('judge_name')
+        .filter(lambda x: len(x) >= 10)
+        .groupby('judge_name')['first_bail_set_cash']
+        .mean()
+        .reset_index()
+        .rename(columns={'first_bail_set_cash': 'average_bail'})
+        .sort_values('average_bail', ascending=False)
+    )
+
+    return average_bails
+
+
+def plot_bail_counts(df: pd.DataFrame):
+    """Plots a histogram of bail counts per judge."""
+
+    plt.hist(df['judge_name'])
+
+    # plt.figure(figsize=(12, 8))
+    # sns.histplot(data=df, x='judge_name', y='bail_count', discrete=True, shrink=0.8, bar_width=0.8, color='skyblue')
+    # plt.title('Bail Counts by Judge (Minimum 10 Bails per Judge)', fontsize=14)
+    # plt.xlabel('Judge Name', fontsize=12)
+    # plt.ylabel('Bail Count', fontsize=12)
+    # plt.xticks(rotation=45, ha="right", fontsize=10)
+    # plt.tight_layout()
+
+    plot_file_path = os.path.join('outputs', "bail_counts_by_judge.png")
+    plt.savefig(plot_file_path)
+    logging.info("Chart saved as '%s'", plot_file_path)
+    plt.show()
+
+
 def tablify(data, headers=None):
     """Create a table from the data.
 
@@ -178,7 +235,7 @@ def plot_partial_dependence(model, x, features, outputs_dir):
     # plt.layo()
 
     # Display and save Matplotlib plot
-    plt.show()
+    # plt.show()
     matplotlib_filename = os.path.join(outputs_dir, "partial_dependence_static.png")
     plt.savefig(matplotlib_filename)
     logging.info("Static Matplotlib PDP saved as '%s'", matplotlib_filename)
@@ -294,6 +351,6 @@ def plot_feature_importance(importance_df, outputs_dir, plot_params: PlotParams,
     )
     plt.savefig(plot_file_path)
     logging.info("Top 10 feature importances chart saved as '%s'", plot_file_path)
-    plt.show()
+    # plt.show()
 
     return plot_file_path
